@@ -13,7 +13,7 @@ create table socialSecurity(
 	amount NUMERIC (10,2) not null,
 	employeePays numeric (10,2),
 	employerPays numeric (10,2),
-	primary key(SSN)
+	primary key(SSN),
 	foreign key (E_ID) references employee(E_ID)
 );
 create table employeeYear(
@@ -32,7 +32,7 @@ create table benefits(
 	e_year DATE not NULL,
 	employeeContribution NUMERIC (10,2) not NULL,
 	employerContribution NUMERIC (10,2),
-	foreign key (SSN) references socialSecurity(SSN)
+	foreign key (SSN) references socialSecurity(SSN),
 	foreign key (E_ID) references employee(E_ID)
 );
 create table stateTax(
@@ -50,7 +50,7 @@ create table bonus(
 	e_year DATE not NULL,
 	percentage DECIMAL,
 	performance VARCHAR (20),
-	company_sale NUMERIC (10,2)
+	company_sale NUMERIC (10,2),
 	foreign key (E_ID) references employee(E_ID)
 );
 create table insurancePlan(
@@ -58,7 +58,7 @@ create table insurancePlan(
 	e_year DATE not NULL,
 	insuranceType VARCHAR (20),
 	premium NUMERIC (10,2),
-	employerContribution numeric (10,2)
+	employerContribution numeric (10,2),
 	foreign key (E_ID) references employee(E_ID)
 );
 create table dependent(
@@ -87,115 +87,133 @@ create index employer_benefit_index on benefits(employerContribution);
 /* "getters" */
 /*find employee ssn by employee_ID*/
 create function find_employee_ssn(employee_ID int)
-returns numeric (9,0)
-begin
+returns numeric (9,0) as $$
 	declare SSN_val numeric(9,0);
+    begin
 		select SSN into SSN_val from employee where E_ID=employee_ID;
 	return SSN_val;
-end
+end;
+$$;
 /*find salary by employee id and year*/
 create function find_salary(employee_ID int, yr DATE)
-returns numeric (10,2)
-begin
-	declare salary_val numeric (10,2);
+returns numeric (10,2) as $$
+    declare salary_val numeric (10,2);
+    begin
 		select salary into salary_val from employeeYear where E_ID=employee_ID and e_year=yr;
 	return salary_val;
-end
+end;
+$$;
+
 /*find tax rate using employee id and year to find state tax rate */
 create function findTaxRate(employee_ID int, yr DATE)
-returns decimal
-begin
-	declare rate decimal;
+returns decimal as $$
+    declare rate decimal;
+    begin
 		select stateTaxRate into rate from employeeYear where E_ID=employee_ID and e_year=yr;
 	return rate;
-end
+end;
+$$;
+
 /*find bracket using year*/
 create function findBracket(yr DATE)
-returns decimal
-begin
-	declare b_rate decimal;
+returns decimal as $$
+    declare b_rate decimal;
+    begin
 		select bracketRate into b_rate from brackets where e_year=yr;
 	return b_rate;
-end
-
+end;
+$$;
 
 /* set tax value */
-create stateTax(employee_ID int, yr DATE)
-returns numeric(10,2)
-begin
-	declare tax_val numeric (10,2);
-	tax_val := findTaxrate(employee_I, yr) * findsalary(employee_I, yr);
-end
+create function stateTax(employee_ID int, yr DATE)
+returns numeric(10,2) as $$
+    declare tax_val numeric (10,2);
+    begin
+        tax_val := findTaxrate(employee_I, yr) * findsalary(employee_I, yr);
+    end;
+$$;
 /* set bracket value */
-create bracket(employee_ID int, yr DATE)
-returns numeric(10,2)
-begin
-	declare bracket_val numeric (10,2);
-	bracket_val := findBracket(yr) * findsalary(employee_I, yr);
-end
+create function bracket(employee_ID int, yr DATE)
+returns numeric(10,2) as $$
+    declare bracket_val numeric (10,2);
+    begin
+	    bracket_val := findBracket(yr) * findsalary(employee_I, yr);
+    end;
+$$;
 /* set social security contribution */
-create socialSec(employee_ID int)
-returns numeric(10,2)
-begin
-	declare ssn_val numeric (10,2);
-	select amount into ssn_val from socialSecurity where employee_ID = E_ID;
-	return ssn_val
-end
+create function socialSec(employee_ID int)
+returns numeric(10,2) as $$
+    declare ssn_val numeric (10,2);
+    begin
+        select amount into ssn_val from socialSecurity where employee_ID = E_ID;
+        return ssn_val;
+    end;
+$$;
 
 /* calculate tax reductions for weekly paycheck report*/
-create tax_reductions(employee_ID int, yr DATE)
-returns numeric(10,2)
-begin
-	declare tax_red_val numeric(10,2)
-	tax_red_val := stateTax(employeeID, yr) + bracket(employeeID, yr) + socialSec(employeeID) ;
-	return tax_red_val
-end
+create function tax_reductions(employee_ID int, yr DATE)
+returns numeric(10,2) as $$
+    declare tax_red_val numeric(10,2);
+    begin
+        tax_red_val := stateTax(employeeID, yr) + bracket(employeeID, yr) + socialSec(employeeID) ;
+        return tax_red_val;
+    end;
+$$;
+
 /*employee_contribution to 401k*/
-create function 401kVal(employee_ID int, benefitType varchar)
-returns numeric(10,2)
-begin
-	declare contribution numeric(10,2)
-		select employeeContribution into contribution from benefits where benefitType="401k" and employee_ID=E_ID;
-	return contribution
-end
+create function Val401k(employee_ID int, benefitType varchar)
+returns numeric(10,2) as $$
+    declare contribution numeric(10,2);
+    begin
+        select employeeContribution into contribution from benefits where benefitType="401k" and employee_ID=E_ID;
+        return contribution;
+    end;
+$$;
+
 /*find insurance premium cost using employee_ID and specific year*/
 create function insurance_premium(employee_ID int, yr DATE)
-returns numeric(10,2)
+returns numeric(10,2) as $$
+    declare premiumcost numeric(10,2);
 begin
-	declare premiumcost numeric(10,2)
-		select premium into premiumcost from insurancePlan where employee_ID=E_ID and e_year=yr;
-	return premiumcost
-end
+	select premium into premiumcost from insurancePlan where employee_ID=E_ID and e_year=yr;
+	return premiumcost;
+end;
+$$;
 
 /*to generate paycheck*/
 create function paycheck(employeeID int, yr DATE)
-returns table
+returns table as $$
+    declare paycheck_amount numeric(10,2)
 begin
-	declare paycheck_amount numeric(10,2)
-		paycheck_amount := find_salary(employeeID, yr) - tax_reductions(employeeID, yr) - 401k(employeeID, yr) - insurance_premium(employeeID, yr);
-	return employeeID, paycheck
-end
+	paycheck_amount := find_salary(employeeID, yr) - tax_reductions(employeeID, yr) - 401k(employeeID, yr) - insurance_premium(employeeID, yr);
+	return employeeID, paycheck;
+end;
+$$;
 
 /*create w2 report requires: annual income, deductions and bonus */
 /*calculate yearly income of employee*/
 create function yearly_income(employee_ID int, yr Date)
-return numeric(10,2)
-begin 
-	declare annual_income numeric(10,2)
+returns numeric(10,2) as $$
+    declare annual_income numeric(10,2);
+    begin
 		annual_salary := (find_salary(employee_ID, yr))*24;
 		/* salary is biweekly, so income for a year includes 12 * 2 salaries */
-	return annual_salary
-end
+        return annual_salary
+    end;
+$$;
+
 /*create table of all the deductions */
-create deductions(employee_ID int, yr DATE)
-returns table
+create function deductions(employee_ID int, yr DATE)
+returns table as $$
 begin 
 	return tax_reductions(employee_ID, yr) , 401k(employee_ID, yr) , insurance_premium(employee_ID, yr);
-end
+end;
+$$;
+
 /*calculates bonus rate depending on performance*/
-create percentage_bonus(perf_type varchar(20))
-returns decimal
-begin
+create function percentage_bonus(perf_type varchar(20))
+returns decimal as $$
+    begin
 	if perf_type == 'well' then
 		return 1.0;
 	else if perf_type == 'okay' then
@@ -205,61 +223,70 @@ begin
 	else
 		return 0.5;
 	end if;
-
-end
+	end if;
+	end if;
+	end;
+$$;
 /*calculates bonus depending on employee id, bonus rate, and year*/
-create bonus_earned(employee_ID int, yr DATE)
-returns numeric(10,2)
-begin
-	declare s_type varchar(20)
-	declare bonus numeric(10,2)
-	declare perf varchar(20)
-	select performance from employeeYear where E_ID=employee_ID and yy=e_year;
-	select salaryType into s_type from employeeYear where E_ID=employee_ID and e_year=yr;
-		if s_type == 'W2' then
-			bonus = yearly_income(emloyee_ID, yr) * percentage_bonus(performance);
-		else:
-			bonus := 0
-		end if;
-	return bonus;
+create function bonus_earned(employee_ID int, yr DATE)
+returns numeric(10,2) as $$
+    declare s_type varchar(20);
+    declare bonus numeric(10,2);
+    declare perf varchar(20);
+    begin
+        select performance from employeeYear where E_ID=employee_ID and yy=e_year;
+        select salaryType into s_type from employeeYear where E_ID=employee_ID and e_year=yr;
+            if s_type == 'W2' then
+                bonus = yearly_income(emloyee_ID, yr) * percentage_bonus(performance);
+            else:
+                bonus := 0;
+            end if;
+        return bonus;
+    end;
+$$;
 
-end
 /*w2 report data*/
 create function w2_report(employee_ID int, yr DATE)
-returns table
-begin
-	return find_employee_SSN(employee_ID), yearly_income(employee_ID, yr), deductions(employee_ID, yr), bonus_earned(employee_ID, yr)
-end
+returns table as $$
+    begin
+        return find_employee_SSN(employee_ID), yearly_income(employee_ID, yr), deductions(employee_ID, yr), bonus_earned(employee_ID, yr)
+    end
+$$;
 
 /*company employee expense report:wages, bonus paid, 401k employer contribution, ssn contribution, insurance contribution*/
 create function find_wages(yr DATE)
-returns table
-begin 
-	return query select employee_ID, salary from employeeYear where e_year=yr;
-end
+returns table as $$
+    begin
+        return query select employee_ID, salary from employeeYear where e_year=yr;
+    end
+$$;
 
 create function bonus_paid(yr DATE)
-returns table
-begin
-	return query select employee_ID, salary, performance from employeeYear where e_year=yr;
-end
+returns table as $$
+    begin
+        return query select employee_ID, salary, performance from employeeYear where e_year=yr;
+    end
+$$;
 
-create function 401k_employer(yr DATE)
-returns table
-begin
-	return query select employee_ID, employerContribution from benefits where e_year=yr and benefitType='401k';
-end
+create function retirement_employer(yr DATE)
+returns table as $$
+    begin
+        return query select employee_ID, employerContribution from benefits where e_year=yr and benefitType='401k';
+    end
+$$;
 
 create function ssn_employer(yr DATE)
-returns table
-begin
-	return query select employee_ID, employerPays from socialSecurity where e_year=yr;
-end
+returns table as $$
+    begin
+        return query select employee_ID, employerPays from socialSecurity where e_year=yr;
+    end
+$$;
 
-create insurance_employer(yr DATE)
-returns table
-begin
-	return query select employee_ID, employerContribution from insurancePlan where e_year=yr;
-end
+create function insurance_employer(yr DATE)
+returns table as $$
+    begin
+        return query select employee_ID, employerContribution from insurancePlan where e_year=yr;
+    end
+$$;
 
 
