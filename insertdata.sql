@@ -1,22 +1,19 @@
-use emp_database;
-
 
 create table User(
-	username varchar(32) not null unique,
-	psswrd varchar (64) not null,
-	IsAdmin bit not null,
-	IsEmployee bit not null,
-	IsEmployer bit not null,
-	HasDependent bit not null,
-	user_ID INT not null AUTO_INCREMENT=1,
-	primary key(user_ID)
+                     username varchar(32) not null unique,
+                     psswrd varchar (64) not null,
+                     IsAdmin bit not null,
+                     IsEmployee bit not null,
+                     IsEmployer bit not null,
+                     HasDependent bit not null,
+                     user_ID serial,
+                     primary key(user_ID)
 );
-
-insert into employee 
+insert into employee
 (E_ID, SSN, firstName, lastName, jobTitle, stateAddress)
 values
 (100, 123456789, 'Paige', 'Turner', 'Manager', 'Illinois' ),
-(101, 123456788, 'Elon' 'Musk', 'Salesperson', 'Ohio'),
+(101, 123456788, 'Elon', 'Musk', 'Salesperson', 'Ohio'),
 (102, 123456777, 'May', 'Day', 'Salesperson', 'Florida'),
 (103, 123456666, 'Al', 'Dente', 'Salesperson', 'Illinois'),
 (104, 123455555, 'Devyn', 'Keeney', 'Robotics_consultant', 'Kansas'),
@@ -69,7 +66,7 @@ values
 ('opt3', 2021, 0.075);
 
 insert into bonus
-(E_ID, e_year, percentage, performance, companySale)
+(E_ID, e_year, percentage, performance, company_sale)
 values
 (100, 2021, 1.5, 'W2', 'manager', 5000),
 (102, 2021, 0.5, 'W2', 'ok', 5000),
@@ -87,3 +84,9 @@ insert into dependent
 values
 (200, 100, 'Jr Turner', 123123123, 'father', 'healthcare'),
 (201, 101, 'X AE A Xii', 321321321, 'son', 'healthcare');
+
+
+
+
+
+
