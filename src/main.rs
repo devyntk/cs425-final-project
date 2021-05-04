@@ -1,10 +1,8 @@
 mod employee;
 mod login;
 
-use crate::Message::LogUser;
-use iced::{button, Button, Column, Element, Sandbox, Settings, Text};
+use iced::{Column, Element, Sandbox, Settings};
 use postgres::{Client, NoTls};
-use crate::Page::Login;
 
 fn main() -> iced::Result {
     env_logger::init();
@@ -29,9 +27,7 @@ enum Page {
 #[derive(Debug, Clone)]
 enum Message {
     SelectPage(Page),
-    LogUser(User),
-    LoginMessage(login::LoginMessage),
-    TestMessage(String)
+    LoginMessage(login::LoginMessage)
 }
 
 #[derive(Debug, Clone)]
@@ -44,7 +40,6 @@ struct User {
 
 #[derive(Debug, PartialEq, Clone)]
 enum UserType {
-    None,
     Employee,
     Manager,
     Administrator,
@@ -68,7 +63,6 @@ impl Sandbox for EmployeeDB {
 
     fn update(&mut self, message: Self::Message) {
         match message {
-            Message::LogUser(user) => self.user = Some(user),
             Message::LoginMessage(msg) => {
                  if let Some(user) = self.login_state.update(msg, &mut self.sql_client) {
                      self.user = Some(user);

@@ -2,7 +2,7 @@ use iced::{text_input, Column, Element};
 use iced::button;
 use iced::Text;
 use crate::{Message, User, UserType};
-use postgres::{Client, Row};
+use postgres::Client;
 
 #[derive(Debug,Clone)]
 pub enum LoginMessage {
