@@ -2,7 +2,7 @@ mod employee;
 mod login;
 mod menu;
 
-use iced::{Column, Element, Sandbox, Settings};
+use iced::{Column, Element, Sandbox, Settings, Text};
 use postgres::{Client, NoTls};
 use crate::menu::MenuMessage;
 use crate::Message::EmployeeMessage;
@@ -89,7 +89,7 @@ impl Sandbox for EmployeeDB {
                 }
             }
             Message::EmployeeMessage(msg) => {
-                if let Some(msg) = self.employee_state.update(msg, &mut self.sql_client) {
+                if let Some(msg) = self.employee_state.update(msg, &mut self.sql_client, self.user.as_ref().unwrap()) {
                     self.update(msg)
                 }
             }
@@ -115,6 +115,9 @@ impl Sandbox for EmployeeDB {
                 self.user = None;
                 self.page = Page::Login;
             }
+            Message::SelectPage(page) => {
+                self.page = page;
+            }
             _ => {}
         }
     }
@@ -124,7 +127,9 @@ impl Sandbox for EmployeeDB {
             Page::Main => {self.menu_state.view(self.user.as_ref().unwrap())}
             Page::Login => {self.login_state.view()}
             Page::ViewEmployee => {self.employee_state.view(self.user.as_ref().unwrap())}
-            _ => {Column::new().into()}
+            _ => {Column::new()
+                .push(Text::new("This should be unreachable. If you are here, something is wrong."))
+                .into()}
         }
     }
 }
