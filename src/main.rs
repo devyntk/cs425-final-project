@@ -31,8 +31,7 @@ enum Message {
     SelectPage(Page),
     LogUser(User),
     LoginMessage(login::LoginMessage),
-    UpdateUsername(String),
-    UpdatePassword(String)
+    TestMessage(String)
 }
 
 #[derive(Debug, Clone)]
@@ -70,19 +69,8 @@ impl Sandbox for EmployeeDB {
     fn update(&mut self, message: Self::Message) {
         match message {
             Message::LogUser(user) => self.user = Some(user),
-            Message::LoginMessage(login_msg) => {
-                // if let Login(mut login_state) = &self.page {
-                //     login_state.update(login_msg)
-                // }
-                match &self.page {
-                    Login => {
-                        self.login_state.update(login_msg)
-                    }
-                    _ => {panic!("Called login message when login not visible")}
-                }
-            },
-            Message::UpdateUsername(password) => {
-                self.login_state.username = password
+            Message::LoginMessage(msg) => {
+                self.login_state.update(msg, &mut self.sql_client)
             }
             _ => {}
         }

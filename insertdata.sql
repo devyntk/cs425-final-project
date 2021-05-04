@@ -1,5 +1,5 @@
 
-create table User(
+create table user_tbl(
                      username varchar(32) not null unique,
                      psswrd varchar (64) not null,
                      IsAdmin bit not null,
