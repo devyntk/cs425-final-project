@@ -1,15 +1,14 @@
 create table employee(
 	E_ID INT,
-	SSN NUMERIC (9,0) not null unique,
+	SSN VARCHAR(9) not null unique,
 	firstName VARCHAR (20) not null,
 	lastName VARCHAR (20) not null,
 	jobTitle VARCHAR (20),
     stateAddress VARCHAR(20),
-	primary key(E_ID),
-	foreign key (SSN) references socialSecurity(SSN)
+	primary key(E_ID)
 );
 create table socialSecurity(
-	SSN NUMERIC (9,0) not null unique,
+	SSN VARCHAR(9)  not null unique,
 	E_ID INT,
     e_year DATE not NULL,
 	amount NUMERIC (10,2) not null,
@@ -30,7 +29,7 @@ create table employeeYear(
 );
 create table benefits(
     E_ID INT,
-	SSN NUMERIC (9,0) not null unique,
+	SSN VARCHAR(9)  not null unique,
 	benefitType VARCHAR (20) not NULL,
 	e_year DATE not NULL,
 	employeeContribution NUMERIC (10,2) not NULL,
@@ -91,7 +90,7 @@ create index employer_benefit_index on benefits(employerContribution);
 /*find employee ssn by employee_ID*/
 create function find_employee_ssn(employee_ID int)
 returns numeric (9,0) as $$
-	declare SSN_val numeric(9,0);
+	declare SSN_val VARCHAR(9) ;
     begin
 		select SSN into SSN_val from employee where E_ID=employee_ID;
 	return SSN_val;

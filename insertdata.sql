@@ -1,13 +1,15 @@
 
 create table user_tbl(
-                     username varchar(32) not null unique,
-                     psswrd varchar (64) not null,
-                     IsAdmin boolean not null,
-                     IsEmployee boolean not null,
-                     IsEmployer boolean not null,
-                     HasDependent boolean not null,
-                     user_ID serial,
-                     primary key(user_ID)
+     username varchar(32) not null unique,
+     psswrd varchar (64) not null,
+     IsAdmin boolean not null,
+     IsEmployee boolean not null,
+     IsEmployer boolean not null,
+     HasDependent boolean not null,
+     user_ID serial,
+     E_ID INT not null,
+     foreign key (E_ID) references employee(E_ID),
+     primary key(user_ID)
 );
 insert into employee
 (E_ID, SSN, firstName, lastName, jobTitle, stateAddress)
@@ -18,6 +20,13 @@ values
 (103, 123456666, 'Al', 'Dente', 'Salesperson', 'Illinois'),
 (104, 123455555, 'Devyn', 'Keeney', 'Robotics_consultant', 'Kansas'),
 (105, 123444444, 'Khushboo', 'Bhattu', 'Agent_of_Chaos', 'Ohio');
+
+insert into user_tbl
+(username, psswrd, IsAdmin, IsEmployee, IsEmployer, HasDependent, E_ID)
+values
+('devyn', 'password', false, true, false, false, 104),
+('khushboo', 'password', true, false, false, false, 105),
+('musky', 'password', false, false, true, true, 101);
 
 insert into socialSecurity
 (E_ID, SSN, amount, employeepays, employerPays)

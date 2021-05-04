@@ -70,7 +70,8 @@ impl LoginState {
                                     },
                                     username: row.get("username"),
                                     user_id: row.get("user_ID"),
-                                    has_dependent: row.get("HasDependent")
+                                    has_dependent: row.get("HasDependent"),
+                                    e_id: row.get("E_ID")
                                 }));
 
                             }
