@@ -33,7 +33,8 @@ pub struct EmployeeState {
     ssn_state: text_input::State,
     job_title_state: text_input::State,
     address_state: text_input::State,
-    save_button: button::State
+    save_button: button::State,
+    years: Vec<i32>
 }
 
 impl EmployeeState {
@@ -78,6 +79,12 @@ impl EmployeeState {
                 self.last_name = employee.get("lastName");
                 self.job_title = employee.get("jobTitle");
                 self.state_address = employee.get("stateAddress");
+
+                let years = client.query("SELECT * FROM employeeYear WHERE E_ID = $1", &[&e_id]);
+                self.years = vec![];
+                for year in years.unwrap() {
+                    self.years.push(year.get("e_year"))
+                }
             }
             EmployeeMessage::SaveChanges => {
                 client.execute("UPDATE employee SET SSN=$1, firstName=$2, lastName=$3, jobTitle=$4, stateAddress=$5\

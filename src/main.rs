@@ -1,6 +1,11 @@
 mod employee;
 mod login;
 mod menu;
+mod employee_year;
+mod employee_list;
+mod w2;
+mod paycheck;
+mod employee_expense;
 
 use iced::{Column, Element, Sandbox, Settings, Text};
 use postgres::{Client, NoTls};
@@ -19,7 +24,12 @@ struct EmployeeDB {
     sql_client: Client,
     login_state: login::LoginState,
     menu_state: menu::MenuState,
-    employee_state: employee::EmployeeState
+    employee_state: employee::EmployeeState,
+    employee_year_state: employee_year::EmployeeYearState,
+    employee_expense_state: employee_expense::EmployeeExpenseState,
+    paycheck_state: paycheck::PaycheckState,
+    w2_state: w2::W2State,
+    employee_list_state: employee_list::EmployeeListState
 }
 
 #[derive(Debug, Clone)]
@@ -27,6 +37,11 @@ enum Page {
     Main,
     Login,
     ViewEmployee,
+    ViewEmployeeYear,
+    EmployeeExpense,
+    Paycheck,
+    W2,
+    EmployeeList
 }
 
 #[derive(Debug, Clone)]
@@ -35,6 +50,11 @@ enum Message {
     LoginMessage(login::LoginMessage),
     MenuMessage(menu::MenuMessage),
     EmployeeMessage(employee::EmployeeMessage),
+    EmployeeYearMessage(employee_year::EmployeeYearMessage),
+    EmployeeExpenseMessage(employee_expense::EmployeeExpenseMessage),
+    PaycheckMessage(paycheck::PaycheckMessage),
+    W2Message(w2::W2Message),
+    EmployeeListMessage(employee_list::EmployeeListMessage),
     LogUser(User),
     LogOut
 }
@@ -65,7 +85,12 @@ impl Sandbox for EmployeeDB {
             sql_client: Client::connect("host=localhost user=cs425", NoTls).unwrap(),
             login_state: login::LoginState::new(),
             menu_state: menu::MenuState::new(),
-            employee_state: employee::EmployeeState::new()
+            employee_state: employee::EmployeeState::new(),
+            employee_year_state: employee_year::EmployeeYearState::new(),
+            employee_expense_state: employee_expense::EmployeeExpenseState::new(),
+            paycheck_state: paycheck::PaycheckState::new(),
+            w2_state: w2::W2State::new(),
+            employee_list_state: employee_list::EmployeeListState::new()
         }
     }
 
@@ -93,6 +118,32 @@ impl Sandbox for EmployeeDB {
                     self.update(msg)
                 }
             }
+            Message::EmployeeYearMessage(msg) => {
+                if let Some(msg) = self.employee_year_state.update(msg, &mut self.sql_client, self.user.as_ref().unwrap()) {
+                    self.update(msg)
+                }
+            }
+            Message::EmployeeExpenseMessage(msg) => {
+                if let Some(msg) = self.employee_expense_state.update(msg, &mut self.sql_client, self.user.as_ref().unwrap()) {
+                    self.update(msg)
+                }
+            }
+            Message::PaycheckMessage(msg) => {
+                if let Some(msg) = self.paycheck_state.update(msg, &mut self.sql_client, self.user.as_ref().unwrap()) {
+                    self.update(msg)
+                }
+            }
+            Message::W2Message(msg) => {
+                if let Some(msg) = self.w2_state.update(msg, &mut self.sql_client, self.user.as_ref().unwrap()) {
+                    self.update(msg)
+                }
+            }
+            Message::EmployeeListMessage(msg) => {
+                if let Some(msg) = self.employee_list_state.update(msg, &mut self.sql_client, self.user.as_ref().unwrap()) {
+                    self.update(msg)
+                }
+            }
+
 
             //global message handlers
             Message::LogUser(user) => {
@@ -118,7 +169,9 @@ impl Sandbox for EmployeeDB {
             Message::SelectPage(page) => {
                 self.page = page;
             }
-            _ => {}
+            _ => {
+                panic!("Unexpected Message")
+            }
         }
     }
 
@@ -127,6 +180,11 @@ impl Sandbox for EmployeeDB {
             Page::Main => {self.menu_state.view(self.user.as_ref().unwrap())}
             Page::Login => {self.login_state.view()}
             Page::ViewEmployee => {self.employee_state.view(self.user.as_ref().unwrap())}
+            Page::ViewEmployeeYear => {self.employee_year_state.view(self.user.as_ref().unwrap())}
+            Page::EmployeeList => {self.employee_list_state.view(self.user.as_ref().unwrap())}
+            Page::EmployeeExpense => {self.employee_expense_state.view(self.user.as_ref().unwrap())}
+            Page::W2 => {self.w2_state.view(self.user.as_ref().unwrap())}
+            Page::Paycheck => {self.paycheck_state.view(self.user.as_ref().unwrap())}
             _ => {Column::new()
                 .push(Text::new("This should be unreachable. If you are here, something is wrong."))
                 .into()}
