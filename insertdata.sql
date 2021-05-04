@@ -2,10 +2,10 @@
 create table user_tbl(
                      username varchar(32) not null unique,
                      psswrd varchar (64) not null,
-                     IsAdmin bit not null,
-                     IsEmployee bit not null,
-                     IsEmployer bit not null,
-                     HasDependent bit not null,
+                     IsAdmin boolean not null,
+                     IsEmployee boolean not null,
+                     IsEmployer boolean not null,
+                     HasDependent boolean not null,
                      user_ID serial,
                      primary key(user_ID)
 );

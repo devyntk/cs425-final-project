@@ -1,7 +1,7 @@
 use iced::{text_input, Column, Element};
 use iced::button;
 use iced::Text;
-use crate::Message;
+use crate::{Message, User, UserType};
 use postgres::{Client, Row};
 
 #[derive(Debug,Clone)]
@@ -47,17 +47,17 @@ impl LoginState {
         }
     }
 
-    pub(crate) fn update(&mut self, msg: LoginMessage, client: &mut Client){
+    pub(crate) fn update(&mut self, msg: LoginMessage, client: &mut Client) -> Option<User> {
         match msg {
             LoginMessage::UpdateUsername(username) => {
-                self.username = username
+                self.username = username;
             },
             LoginMessage::UpdatePassword(password) => {
-                self.password = password
+                self.password = password;
             },
             LoginMessage::Submit => {
                 if self.disabled {
-                    return
+                    return None;
                 }
                 self.disabled = true;
                 // do stuff
@@ -68,8 +68,20 @@ impl LoginState {
                             None => {
                                 self.err_text = "No Users Found".parse().unwrap()
                             }
-                            Some(_) => {
-                                self.err_text = "Logged in!".parse().unwrap();
+                            Some(row) => {
+                                return Some(User{
+                                    usertype: if row.get("isAdmin") {
+                                        UserType::Administrator
+                                    } else if row.get("IsEmployer"){
+                                        UserType::Manager
+                                    } else {
+                                        UserType::Employee
+                                    },
+                                    username: row.get("username"),
+                                    user_id: row.get("user_ID"),
+                                    has_dependent: row.get("HasDependent")
+                                });
+
                             }
                         }
                     },
@@ -80,6 +92,7 @@ impl LoginState {
                 self.disabled = false;
             }
         }
+        None
     }
 
     pub(crate) fn view(&mut self) -> Element<Message> {

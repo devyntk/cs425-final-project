@@ -38,7 +38,7 @@ enum Message {
 struct User {
     usertype: UserType,
     username: String,
-    user_id: u32,
+    user_id: i32,
     has_dependent: bool
 }
 
@@ -70,7 +70,10 @@ impl Sandbox for EmployeeDB {
         match message {
             Message::LogUser(user) => self.user = Some(user),
             Message::LoginMessage(msg) => {
-                self.login_state.update(msg, &mut self.sql_client)
+                 if let Some(user) = self.login_state.update(msg, &mut self.sql_client) {
+                     self.user = Some(user);
+                     self.page = Page::Main;
+                 }
             }
             _ => {}
         }
