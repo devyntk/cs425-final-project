@@ -1,6 +1,10 @@
-use iced::{Sandbox, Element, Settings, Column, Text, Button, button};
-use postgres::{Client, NoTls};
+mod employee;
+mod login;
+
 use crate::Message::LogUser;
+use iced::{button, Button, Column, Element, Sandbox, Settings, Text};
+use postgres::{Client, NoTls};
+use crate::Page::Login;
 
 fn main() -> iced::Result {
     env_logger::init();
@@ -9,23 +13,34 @@ fn main() -> iced::Result {
 }
 
 struct EmployeeDB {
-    user: UserType,
+    user: Option<User>,
     page: Page,
     sql_client: Client,
-    confirm_button: button::State,
-    back_button: button::State,
-    forward_button: button::State
+    login_state: login::LoginState
 }
 
 #[derive(Debug, Clone)]
 enum Page {
-    Main
+    Main,
+    Login,
+    ViewEmployee,
 }
 
 #[derive(Debug, Clone)]
 enum Message {
     SelectPage(Page),
-    LogUser(UserType)
+    LogUser(User),
+    LoginMessage(login::LoginMessage),
+    UpdateUsername(String),
+    UpdatePassword(String)
+}
+
+#[derive(Debug, Clone)]
+struct User {
+    usertype: UserType,
+    username: String,
+    user_id: u32,
+    has_dependent: bool
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -33,7 +48,7 @@ enum UserType {
     None,
     Employee,
     Manager,
-    Administrator
+    Administrator,
 }
 
 impl Sandbox for EmployeeDB {
@@ -41,12 +56,10 @@ impl Sandbox for EmployeeDB {
 
     fn new() -> Self {
         EmployeeDB {
-            user: UserType::None,
-            page: Page::Main,
+            user: None,
+            page: Page::Login,
             sql_client: Client::connect("host=localhost user=cs425", NoTls).unwrap(),
-            confirm_button: button::State::default(),
-            back_button: button::State::default(),
-            forward_button: button::State::default()
+            login_state: login::LoginState::new()
         }
     }
 
@@ -56,38 +69,32 @@ impl Sandbox for EmployeeDB {
 
     fn update(&mut self, message: Self::Message) {
         match message {
-            LogUser(user) => {self.user = user}
+            Message::LogUser(user) => self.user = Some(user),
+            Message::LoginMessage(login_msg) => {
+                // if let Login(mut login_state) = &self.page {
+                //     login_state.update(login_msg)
+                // }
+                match &self.page {
+                    Login => {
+                        self.login_state.update(login_msg)
+                    }
+                    _ => {panic!("Called login message when login not visible")}
+                }
+            },
+            Message::UpdateUsername(password) => {
+                self.login_state.username = password
+            }
             _ => {}
         }
     }
 
     fn view(&mut self) -> Element<Message> {
-        if self.user == UserType::None {
-            let column = Column::new()
-                .push(Text::new("Please select a user type from the following:"))
-                .push(
-                    Button::new(&mut self.confirm_button, Text::new("Administrator"))
-                        .on_press(Message::LogUser(UserType::Administrator))
-                )
-                .push(
-                    Button::new(&mut self.forward_button, Text::new("Manager"))
-                        .on_press(Message::LogUser(UserType::Manager))
-                )
-                .push(
-                    Button::new(&mut self.back_button, Text::new("Employee"))
-                        .on_press(Message::LogUser(UserType::Employee))
-                );
-            return column.into()
+        if self.user.is_none() {
         }
-        match self.page {
-            Page::Main => {
-                Column::new()
-                    .push(Text::new(format!("Logged in as {:?}", self.user)))
-                    .push(
-                        Button::new(&mut self.back_button, Text::new("Log Out"))
-                            .on_press(Message::LogUser(UserType::None)))
-                    .into()
-            }
+        match &self.page {
+            Page::Main => {Column::new().into()}
+            Page::Login => {self.login_state.view()}
+            _ => {Column::new().into()}
         }
     }
 }
