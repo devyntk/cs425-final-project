@@ -14,12 +14,12 @@ create table user_tbl(
 insert into employee
 (E_ID, SSN, firstName, lastName, jobTitle, stateAddress)
 values
-(100, 123456789, 'Paige', 'Turner', 'Manager', 'Illinois' ),
-(101, 123456788, 'Elon', 'Musk', 'Salesperson', 'Ohio'),
-(102, 123456777, 'May', 'Day', 'Salesperson', 'Florida'),
-(103, 123456666, 'Al', 'Dente', 'Salesperson', 'Illinois'),
-(104, 123455555, 'Devyn', 'Keeney', 'Robotics_consultant', 'Kansas'),
-(105, 123444444, 'Khushboo', 'Bhattu', 'Agent_of_Chaos', 'Ohio');
+(100, 123456789, 'Paige', 'Turner', 'Manager', 'IL' ),
+(101, 123456788, 'Elon', 'Musk', 'Salesperson', 'OH'),
+(102, 123456777, 'May', 'Day', 'Salesperson', 'FL'),
+(103, 123456666, 'Al', 'Dente', 'Salesperson', 'IL'),
+(104, 123455555, 'Devyn', 'Keeney', 'Robotics_consultant', 'KS'),
+(105, 123444444, 'Khushboo', 'Bhattu', 'Agent_of_Chaos', 'OH');
 
 insert into user_tbl
 (username, psswrd, IsAdmin, IsEmployee, IsEmployer, HasDependent, E_ID)
@@ -28,43 +28,42 @@ values
 ('khushboo', 'password', true, false, false, false, 105),
 ('musky', 'password', false, false, true, true, 101);
 
-insert into socialSecurity
-(E_ID, SSN, amount, employeepays, employerPays)
-values
-(100, 123456789, 5000, 5000, 0),
-(101, 123456788, 6000, 4000, 2000),
-(102, 123456777, 7000, 3000, 4000),
-(103, 123456666, 8000, 2000, 6000),
-(103, 123456666, 9000, 1000, 8000),
-(105, 123444444, 1000, 1000, 0);
-
 insert into employeeYear
 (E_ID, e_year, salary, salarytype, performance)
 values
-(100, 2021, 35000, 'W2', 'ok'),
+(100, 2021, 35000, 'w2', 'ok'),
 (101, 2021, 5000, 'hourly', 'ok'),
-(102, 2021, 25000, 'W2', 'ok'),
-(103, 2021, 25000, 'hourly', 'ok'),
-(103, 2021, 25000, 'W2', 'ok'),
+(102, 2021, 25000, 'w2', 'ok'),
+(103, 2020, 25000, 'hourly', 'ok'),
+(103, 2021, 25000, 'w2', 'ok'),
 (105, 2021, 25000, 'hourly', 'ok');
 
-insert into benefits
-(E_ID, SSN, benefittype, e_year, employeecontribution, employercontribution)
+insert into socialSecurity
+(E_ID, e_year, amount, employeepays, employerPays)
 values
-(100, 123456789, '401k', 2021, 5000, 0),
-(101, 123456788, null, 2021, null, null),
-(102, 123456777, null, 2021, null, null),
-(103, 123456666, '401k', 2021, 0, 5000),
-(103, 123456666, '401k', 2021, 5000, 5000),
-(105, 123444444, '401k', 2021, 5000, 5000);
+(100, 2021, 5000, 5000, 0),
+(101, 2021, 6000, 4000, 2000),
+(102, 2021, 7000, 3000, 4000),
+(103, 2021, 8000, 2000, 6000),
+(103, 2020, 9000, 1000, 8000),
+(105, 2021, 1000, 1000, 0);
+
+
+insert into benefits
+(E_ID, e_year, benefittype, employeecontribution, employercontribution)
+values
+(100, 2021, '401k', 5000, 0),
+(103, 2021, '401k', 0, 5000),
+(103, 2020, '401k', 5000, 5000),
+(105, 2021, '401k', 5000, 5000);
 
 insert into stateTax
 (statename, e_year, statetaxrate)
 values
-('Ohio', 2021, 0.0575),
-('Illinois', 2021, 0.0625),
-('Florida', 2021,  0.06),
-('Kansas', 2021, 0.065);
+('OH', 2021, 0.0575),
+('IL', 2021, 0.0625),
+('FL', 2021,  0.06),
+('KS', 2021, 0.065);
 
 
 insert into brackets
@@ -77,15 +76,15 @@ values
 insert into bonus
 (E_ID, e_year, percentage, performance, company_sale)
 values
-(100, 2021, 1.5, 'W2', 'manager', 5000),
-(102, 2021, 0.5, 'W2', 'ok', 5000),
-(103, 2021, 0.5, 'W2', 'ok', 5000);
+(100, 2021, 1.5, 'well', 5000),
+(102, 2021, 0.5, 'ok', 5000),
+(103, 2021, 0.5, 'not_well', 5000);
 
 insert into insurancePlan
 (e_id,e_year,insurancetype, premium, employerContribution)
 values
 (101, 2021, 'EPO', 5000, 5000),
-(104, 2021, 'HMO', 2500, 2500),
+(103, 2021, 'HMO', 2500, 2500),
 (105, 2021, 'HMO', 4000, 2000);
 
 insert into dependent
