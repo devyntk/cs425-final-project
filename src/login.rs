@@ -10,17 +10,8 @@ pub enum LoginMessage {
     UpdatePassword(String),
     Submit
 }
-impl LoginMessage {
-    // This is done individually for each message type because enum variants aren't their own
-    // type, so we can't make this function generic. Hopefully a future rust allows this to clean
-    // up but I don't plan on altering code past like. two days from now.
-    fn wrap_username_message(str: String) -> Message {
-        return Message::LoginMessage(LoginMessage::UpdateUsername(str))
-    }
-    fn wrap_password_message(str: String) -> Message {
-        return Message::LoginMessage(LoginMessage::UpdatePassword(str))
-    }
-
+fn make_wrapper(variant: impl Fn(String) -> LoginMessage) -> impl Fn(String) -> Message{
+    move |s| Message::LoginMessage(variant(s))
 }
 
 #[derive(Debug, Clone)]
@@ -47,7 +38,7 @@ impl LoginState {
         }
     }
 
-    pub(crate) fn update(&mut self, msg: LoginMessage, client: &mut Client) -> Option<User> {
+    pub(crate) fn update(&mut self, msg: LoginMessage, client: &mut Client) -> Option<Message> {
         match msg {
             LoginMessage::UpdateUsername(username) => {
                 self.username = username;
@@ -69,7 +60,7 @@ impl LoginState {
                                 self.err_text = "No Users Found".parse().unwrap()
                             }
                             Some(row) => {
-                                return Some(User{
+                                return Some(Message::LogUser(User{
                                     usertype: if row.get("isAdmin") {
                                         UserType::Administrator
                                     } else if row.get("IsEmployer"){
@@ -80,7 +71,7 @@ impl LoginState {
                                     username: row.get("username"),
                                     user_id: row.get("user_ID"),
                                     has_dependent: row.get("HasDependent")
-                                });
+                                }));
 
                             }
                         }
@@ -98,8 +89,8 @@ impl LoginState {
     pub(crate) fn view(&mut self) -> Element<Message> {
         Column::new()
             .push(Text::new(self.err_text.as_str()))
-            .push(text_input::TextInput::new(&mut self.username_state, "username", &*self.username, LoginMessage::wrap_username_message))
-            .push(text_input::TextInput::new(&mut self.password_state, "password", &*self.password, LoginMessage::wrap_password_message))
+            .push(text_input::TextInput::new(&mut self.username_state, "username", &*self.username, make_wrapper(LoginMessage::UpdateUsername)))
+            .push(text_input::TextInput::new(&mut self.password_state, "password", &*self.password, make_wrapper(LoginMessage::UpdatePassword)))
             .push(button::Button::new(&mut self.login_button, Text::new(
                 match self.disabled{
                     true => {"Logging in..."}
