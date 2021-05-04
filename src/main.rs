@@ -32,7 +32,8 @@ enum Message {
     SelectPage(Page),
     LoginMessage(login::LoginMessage),
     MenuMessage(menu::MenuMessage),
-    LogUser(User)
+    LogUser(User),
+    LogOut
 }
 
 #[derive(Debug, Clone)]
@@ -93,13 +94,17 @@ impl Sandbox for EmployeeDB {
                     }
                 }
             }
+            Message::LogOut => {
+                self.user = None;
+                self.page = Page::Login;
+            }
             _ => {}
         }
     }
 
     fn view(&mut self) -> Element<Message> {
         match &self.page {
-            Page::Main => {self.menu_state.view()}
+            Page::Main => {self.menu_state.view(self.user.as_ref().unwrap())}
             Page::Login => {self.login_state.view()}
             _ => {Column::new().into()}
         }

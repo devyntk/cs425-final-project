@@ -1,9 +1,11 @@
-use crate::Message;
+use crate::{Message, User};
 use postgres::Client;
-use iced::{Column, Element};
+use iced::{Column, Element, Text, Button};
+use iced::button::State;
 
 #[derive(Debug,Clone)]
 pub enum MenuMessage {
+    LogOut
 }
 fn make_wrapper(variant: impl Fn(String) -> MenuMessage) -> impl Fn(String) -> Message{
     move |s| Message::MenuMessage(variant(s))
@@ -11,22 +13,29 @@ fn make_wrapper(variant: impl Fn(String) -> MenuMessage) -> impl Fn(String) -> M
 
 #[derive(Debug, Clone)]
 pub struct MenuState {
+    log_out_state: State
 }
 
 impl MenuState {
     pub fn new() -> Self {
         MenuState {
+            log_out_state: State::default()
         }
     }
 
     pub(crate) fn update(&mut self, msg: MenuMessage, client: &mut Client) -> Option<Message> {
-        match msg {
+        return match msg {
+            MenuMessage::LogOut => {
+                Some(Message::LogOut)
+            }
         }
-        None
     }
 
-    pub(crate) fn view(&mut self) -> Element<Message> {
+    pub(crate) fn view(&mut self, user: &User) -> Element<Message> {
         Column::new()
+            .push(Text::new(format!("Welcome, {}", user.username)))
+            .push(Button::new(&mut self.log_out_state, Text::new("Log out"))
+                .on_press(Message::MenuMessage(MenuMessage::LogOut)))
             .into()
     }
 }
