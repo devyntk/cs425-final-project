@@ -64,7 +64,6 @@ enum Message {
 struct User {
     usertype: UserType,
     username: String,
-    user_id: i32,
     has_dependent: bool,
     e_id: i32
 }

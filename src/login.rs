@@ -60,6 +60,7 @@ impl LoginState {
                             }
                             Some(row) => {
                                 self.disabled = false;
+                                self.err_text = "Please log in.".parse().unwrap();
                                 return Some(Message::LogUser(User{
                                     usertype: if row.get("isAdmin") {
                                         UserType::Administrator
@@ -69,7 +70,6 @@ impl LoginState {
                                         UserType::Employee
                                     },
                                     username: row.get("username"),
-                                    user_id: row.get("user_ID"),
                                     has_dependent: row.get("HasDependent"),
                                     e_id: row.get("E_ID")
                                 }));

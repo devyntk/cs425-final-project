@@ -6,10 +6,9 @@ create table user_tbl(
      IsEmployee boolean not null,
      IsEmployer boolean not null,
      HasDependent boolean not null,
-     user_ID serial,
      E_ID INT not null,
      foreign key (E_ID) references employee(E_ID),
-     primary key(user_ID)
+     primary key(E_ID)
 );
 insert into employee
 (E_ID, SSN, firstName, lastName, jobTitle, stateAddress)

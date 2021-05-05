@@ -23,7 +23,10 @@ pub enum EmployeeMessage {
     ChangeDepName(i32, String),
     ChangeDepSSN(i32, String),
     ChangeDepRelation(i32, String),
-    ChangeDepBenefit(i32, String)
+    ChangeDepBenefit(i32, String),
+    ChangeUsername(String),
+    ChangePassword(String),
+    MakeLogin
 }
 fn make_wrapper(variant: impl Fn(String) -> EmployeeMessage) -> impl Fn(String) -> Message{
     move |s| Message::EmployeeMessage(variant(s))
@@ -53,8 +56,34 @@ pub struct EmployeeState {
     year_states: Vec<button::State>,
     dependents: HashMap<i32, Dependent>,
     num_deps: i32,
-    add_dep_state: button::State
+    add_dep_state: button::State,
+    user_emp: Option<UserEmp>,
+    make_login_state: button::State
 }
+
+#[derive(Debug, Clone, Default)]
+pub struct UserEmp {
+    username: String,
+    password: String,
+    username_state: text_input::State,
+    password_state: text_input::State
+}
+impl UserEmp {
+    fn view(&mut self) -> Column<Message> {
+        Column::new()
+            .push(Row::new().push(Text::new("Username:"))
+                .push(TextInput::new(&mut self.username_state, "username",
+                    &*self.username,
+                    make_wrapper(EmployeeMessage::ChangeUsername)
+                )))
+            .push(Row::new().push(Text::new("Password:"))
+                .push(TextInput::new(&mut self.password_state, "password",
+                     &*self.password,
+                     make_wrapper(EmployeeMessage::ChangePassword)
+                )))
+    }
+}
+
 
 #[derive(Debug, Clone, Default)]
 pub struct Dependent {
@@ -182,7 +211,23 @@ impl EmployeeState {
                         benefits_state: text_input::State::default(),
                         delete_state: button::State::default()
                     });
+                    let user = client.query_opt("SELECT * FROM user_tbl WHERE e_id = $1;",
+                                                &[&self.e_id]).expect("Error getting user");
+                    match user {
+                        None => {
+                            self.user_emp = None;
+                        } Some(user_row) => {
+                            self.user_emp = Some(UserEmp{
+                                username: user_row.get("username"),
+                                password: user_row.get("psswrd"),
+                                username_state: Default::default(),
+                                password_state: Default::default()
+                            })
+                        }
+                    }
+
                     self.num_deps += 1;
+
                 };
             }
             EmployeeMessage::SaveChanges => {
@@ -200,6 +245,20 @@ impl EmployeeState {
                         benefits = $6",
                                    &[&dep.d_id, &self.e_id, &dep.d_name, &dep.ssn, &dep.relation, &dep.benefits])
                         .expect("Cannot update dependent");
+                }
+                if let Some(user) = &self.user_emp {
+                    client.execute("INSERT INTO user_tbl (username, psswrd, IsAdmin, IsEmployee, IsEmployer, HasDependent, E_ID) \
+                    VALUES ($1, $2, $3, $4, $5, $6, $7) \
+                    ON CONFLICT (E_ID) DO UPDATE \
+                        SET username = $1, \
+                        psswrd = $2, \
+                        IsAdmin = $3, \
+                        IsEmployee = $4, \
+                        IsEmployer = $5, \
+                        HasDependent = $6",
+                                   &[&user.username, &user.password, &false, &true, &false, &false, &self.e_id])
+                        .expect("Cannot update dependent");
+
                 }
 
                 //just to cover all of our bases, let's re-load from the DB
@@ -271,6 +330,22 @@ impl EmployeeState {
                     None => { panic!("Cannot find Dep IDX")}
                     Some(dep) => {
                         dep.ssn = str;
+                    }
+                }
+            }
+            EmployeeMessage::ChangeUsername(str) => {
+                match &mut self.user_emp {
+                    None => {panic!("No user on record")}
+                    Some(user) => {
+                       user.username = str
+                    }
+                }
+            }
+            EmployeeMessage::ChangePassword(str) => {
+                match &mut self.user_emp {
+                    None => {panic!("No user on record")}
+                    Some(user) => {
+                        user.password = str
                     }
                 }
             }
@@ -357,6 +432,15 @@ impl EmployeeState {
                 ).push(Button::new(&mut self.add_dep_state, Text::new("Add Dependent"))
                     .on_press(Message::EmployeeMessage(EmployeeMessage::AddDep)))
             ))
+            .push(match &mut self.user_emp {
+                None => {
+                    Column::new().push(Button::new(&mut self.make_login_state, Text::new("Make Login"))
+                        .on_press(Message::EmployeeMessage(EmployeeMessage::MakeLogin)))
+                }
+                Some(login_emp) => {
+                    login_emp.view()
+                }
+            })
             .push(
                 button::Button::new(&mut self.save_button, Text::new("Save Changes"))
                     .on_press(Message::EmployeeMessage(EmployeeMessage::SaveChanges))
