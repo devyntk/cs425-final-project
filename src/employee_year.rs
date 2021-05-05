@@ -18,11 +18,17 @@ fn make_wrapper(variant: impl Fn(String) -> EmployeeYearMessage) -> impl Fn(Stri
 }
 
 #[derive(Debug, Clone, ToSql, FromSql)]
+#[postgres(name="perfomance")]
 enum Performance {
+    #[postgres(name="well")]
     Well,
+    #[postgres(name="ok")]
     Ok,
+    #[postgres(name="not_well")]
     NotWell,
+    #[postgres(name="super_performer")]
     SuperPerformer,
+    #[postgres(name="manager")]
     Manager
 }
 impl Default for Performance {
@@ -30,8 +36,11 @@ impl Default for Performance {
 }
 
 #[derive(Debug, Clone, ToSql, FromSql)]
+#[postgres(name="salary")]
 enum SalaryType {
+    #[postgres(name="w2")]
     W2,
+    #[postgres(name="hourly")]
     Hourly
 }
 impl Default for SalaryType {

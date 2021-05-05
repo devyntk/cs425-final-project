@@ -12,7 +12,7 @@ create type salary AS ENUM ('w2', 'hourly');
 create table employeeYear(
 	E_ID INT,
 	e_year INT not NULL,
-	salary FLOAT,
+	salary REAL,
 	salaryType salary,
 	performance perfomance,
 	constraint emp_year primary key (E_ID, e_year),
@@ -22,50 +22,49 @@ create table employeeYear(
 create table socialSecurity(
     E_ID INT,
     e_year INT not NULL,
-    amount NUMERIC (10,2) not null,
-    employeePays FLOAT,
-    employerPays FLOAT,
+    amount REAL not null,
+    employeePays REAL,
+    employerPays REAL,
     foreign key (E_ID, e_year) references employeeYear(E_ID, e_year)
 );
 create table benefits(
     E_ID INT,
     e_year INT not NULL,
 	benefitType VARCHAR (20) not NULL,
-	employeeContribution FLOAT not NULL,
-	employerContribution FLOAT,
+	employeeContribution REAL not NULL,
+	employerContribution REAL,
     foreign key (E_ID, e_year) references employeeYear(E_ID, e_year)
 );
 create table stateTax(
 	stateName VARCHAR(2) not null UNIQUE,
 	e_year INT not NULL,
-	stateTaxRate DECIMAL
+	stateTaxRate REAL
 );
 create table brackets(
 	bracketName VARCHAR (20) not null UNIQUE,
 	e_year INT not NULL,
-	bracketRate DECIMAL
+	bracketRate REAL
 );
 create table bonus(
 	E_ID INT,
 	e_year INT not NULL,
-	percentage DECIMAL,
-    performance perfomance,
-	company_sale FLOAT,
+	percentage REAL,
+	company_sale REAL,
     foreign key (E_ID, e_year) references employeeYear(E_ID, e_year)
 );
 create table insurancePlan(
 	E_ID INT,
 	e_year INT not NULL,
 	insuranceType VARCHAR (20),
-	premium FLOAT,
-	employerContribution FLOAT,
+	premium REAL,
+	employerContribution REAL,
     foreign key (E_ID, e_year) references employeeYear(E_ID, e_year)
 );
 create table dependent(
 	D_ID INT,
 	E_ID INT,
 	d_name VARCHAR (20),
-	SSN NUMERIC (9,0) not null unique,
+	SSN VARCHAR(9) not null unique,
 	relation VARCHAR (20),
 	benefits VARCHAR(20),
 	foreign key (E_ID) references employee(E_ID)

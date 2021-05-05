@@ -8,3 +8,4 @@ The purpose is purely for learning DB skills. As such, the following shortcoming
 - All monetary data in the DB is stored as floating point types instead of SQL's `NUMERIC` type. This is done because 
 rust has no equivalent type to `NUMERIC` and as such the create being used for SQL connections could not handle this.
 - The DB Connection details are hard coded into the application, and have no provision for an external server. 
+- The error handling is minimal at best and would likely fail even the smartest of dumbest users.
