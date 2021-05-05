@@ -16,10 +16,16 @@ pub enum EmployeeYearMessage {
     UpdateSalaryType(SalaryType),
     UpdatePerformance(Performance),
     UpdateSalary(String),
+
     UpdateSSAmount(String),
     UpdateSSEmployeePays(String),
     UpdateSSEmployerPays(String),
-    CreateSS
+    CreateSS,
+
+    UpdateBenefitType(String),
+    UpdateBenefitEmployee(String),
+    UpdateBenefitEmployer(String),
+    CreateBenefit
 }
 fn make_wrapper(variant: impl Fn(String) -> EmployeeYearMessage) -> impl Fn(String) -> Message{
     move |s| Message::EmployeeYearMessage(variant(s))
@@ -123,7 +129,13 @@ pub struct EmployeeYearState {
     amount_state: text_input::State,
     employee_pays_state: text_input::State,
     employer_pays_state: text_input::State,
-    ss_create_state: button::State
+    ss_create_state: button::State,
+
+    //benefits state
+    benefit_type_state: text_input::State,
+    benefit_employee_contribution_state: text_input::State,
+    benefit_employer_contribution_state: text_input::State,
+    benefit_create_state: button::State
 }
 
 #[derive(Debug, Clone, Default, Copy)]
@@ -275,6 +287,46 @@ impl EmployeeYearState {
                     employer_pays: 0.0
                 })
             }
+            EmployeeYearMessage::UpdateBenefitType(str) => {
+                match &self.benefits {
+                    Some(benefits) => {
+                        self.benefits = Some(Benefits{
+                            benefit_type: str,
+                            employee_contribution: benefits.employee_contribution,
+                            employer_contribution: benefits.employer_contribution
+                        });
+                    } None => {panic!("Updated Benefits without having data.")}
+                }
+            }
+            EmployeeYearMessage::UpdateBenefitEmployee(str) => {
+                match &self.benefits {
+                    Some(benefits) => {
+                        self.benefits = Some(Benefits{
+                            benefit_type: benefits.benefit_type.clone(),
+                            employee_contribution: str.parse().unwrap_or(benefits.employee_contribution),
+                            employer_contribution: benefits.employer_contribution
+                        });
+                    } None => {panic!("Updated Benefits without having data.")}
+                }
+            }
+            EmployeeYearMessage::UpdateBenefitEmployer(str) => {
+                match &self.benefits {
+                    Some(benefits) => {
+                        self.benefits = Some(Benefits{
+                            benefit_type: benefits.benefit_type.clone(),
+                            employee_contribution: benefits.employee_contribution,
+                            employer_contribution: str.parse().unwrap_or(benefits.employer_contribution)
+                        });
+                    } None => {panic!("Updated Benefits without having data.")}
+                }
+            }
+            EmployeeYearMessage::CreateBenefit => {
+                self.benefits = Some(Benefits{
+                    benefit_type: "Insert Here".parse().unwrap(),
+                    employee_contribution: 0.0,
+                    employer_contribution: 0.0
+                })
+            }
             _ => {}
         }
         None
@@ -329,6 +381,34 @@ impl EmployeeYearState {
                                 .push(Button::new(&mut self.ss_create_state,
                                                   Text::new("Create SS Record"))
                                     .on_press(Message::EmployeeYearMessage(EmployeeYearMessage::CreateSS)))
+                        }
+                    }
+                ))
+            .push(Row::new().push(Text::new("Benefit:"))
+                .push(
+                    match &self.benefits {
+                        Some(benefits) => {
+                            Column::new()
+                                .push(Row::new().push(Text::new("Type:"))
+                                    .push(TextInput::new(&mut self.benefit_type_state,
+                                                         "type",
+                                                         &*benefits.benefit_type,
+                                                         make_wrapper(EmployeeYearMessage::UpdateBenefitType))))
+                                .push(Row::new().push(Text::new("Employer Contribution:"))
+                                    .push(TextInput::new(&mut self.benefit_employer_contribution_state,
+                                                         "Employer Pays:",
+                                                         &*benefits.employer_contribution.to_string(),
+                                                         make_wrapper(EmployeeYearMessage::UpdateBenefitEmployer))))
+                                .push(Row::new().push(Text::new("Employee Contribution:"))
+                                    .push(TextInput::new(&mut self.benefit_employee_contribution_state,
+                                                         "Employee Pays:",
+                                                         &*benefits.employee_contribution.to_string(),
+                                                         make_wrapper(EmployeeYearMessage::UpdateSSEmployeePays))))
+                        } _ => {
+                            Column::new().push(Text::new("None on record."))
+                                .push(Button::new(&mut self.benefit_create_state,
+                                                  Text::new("Create Benefit"))
+                                    .on_press(Message::EmployeeYearMessage(EmployeeYearMessage::CreateBenefit)))
                         }
                     }
                 ))
