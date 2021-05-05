@@ -16,6 +16,8 @@ pub enum EmployeeYearMessage {
     UpdateSalaryType(SalaryType),
     UpdatePerformance(Performance),
     UpdateSalary(String),
+    Save,
+    Back,
 
     UpdateSSAmount(String),
     UpdateSSEmployeePays(String),
@@ -25,7 +27,16 @@ pub enum EmployeeYearMessage {
     UpdateBenefitType(String),
     UpdateBenefitEmployee(String),
     UpdateBenefitEmployer(String),
-    CreateBenefit
+    CreateBenefit,
+
+    UpdateBonusPercentage(String),
+    UpdateBonusSale(String),
+    CreateBonus,
+
+    UpdateInsuranceType(String),
+    UpdateInsurancePremium(String),
+    UpdateInsuranceEmployer(String),
+    CreateInsurance
 }
 fn make_wrapper(variant: impl Fn(String) -> EmployeeYearMessage) -> impl Fn(String) -> Message{
     move |s| Message::EmployeeYearMessage(variant(s))
@@ -126,6 +137,10 @@ pub struct EmployeeYearState {
     salary_state: text_input::State,
     salary_pick_state: pick_list::State<SalaryType>,
     performance_pick_state: pick_list::State<Performance>,
+    save_state: button::State,
+    back_state: button::State,
+
+    // social security state
     amount_state: text_input::State,
     employee_pays_state: text_input::State,
     employer_pays_state: text_input::State,
@@ -135,7 +150,18 @@ pub struct EmployeeYearState {
     benefit_type_state: text_input::State,
     benefit_employee_contribution_state: text_input::State,
     benefit_employer_contribution_state: text_input::State,
-    benefit_create_state: button::State
+    benefit_create_state: button::State,
+
+    // bonus state
+    bonus_percentage_state: text_input::State,
+    bonus_sale_state: text_input::State,
+    bonus_create_state: button::State,
+
+    // insurance state
+    insurance_type_state: text_input::State,
+    insurance_premium_state: text_input::State,
+    insurance_employer_state: text_input::State,
+    insurance_create_state: button::State
 }
 
 #[derive(Debug, Clone, Default, Copy)]
@@ -230,6 +256,58 @@ impl EmployeeYearState {
 
                 info!("{:?}", &self);
                 return Some(Message::SelectPage(crate::Page::ViewEmployeeYear))
+            }
+            EmployeeYearMessage::Save => {
+                client.execute("UPDATE employeeYear SET salary=$3, salaryType=$4, performance=$5\
+                WHERE E_ID = $1 AND e_year=$2;",
+                               &[&self.e_id, &self.e_year, &self.salary, &self.salary_type, &self.performance]);
+                if let Some(ss) = &self.social_security {
+                    client.execute("INSERT INTO socialSecurity (E_ID, e_year, amount, employeePays, employerPays)\
+                    VALUES ($1, $2, $3, $4, $5) \
+                    ON CONFLICT (E_ID, e_year) DO UPDATE \
+                        SET amount = $3,\
+                        employeePays = $4, \
+                        employerPays = $5",
+                                   &[&self.e_id, &self.e_year, &ss.amount, &ss.employee_pays, &ss.employer_pays])
+                        .expect("Cannot update social Security");
+                }
+
+                if let Some(benefit) = &self.benefits {
+                    client.execute("INSERT INTO benefits (E_ID, e_year, benefitType, employeeContribution, employerContribution)\
+                    VALUES ($1, $2, $3, $4, $5) \
+                    ON CONFLICT (E_ID, e_year) DO UPDATE \
+                        SET benefitType = $3,\
+                        employeeContribution = $4, \
+                        employerContribution = $5",
+                                   &[&self.e_id, &self.e_year, &benefit.benefit_type, &benefit.employee_contribution, &benefit.employer_contribution])
+                        .expect("Cannot update benefit");
+                }
+
+                if let Some(bonus) = &self.bonus {
+                    client.execute("INSERT INTO bonus (E_ID, e_year, percentage, company_sale) \
+                    VALUES ($1, $2, $3, $4) \
+                    ON CONFLICT (E_ID, e_year) DO UPDATE \
+                        SET percentage = $3, \
+                        company_sale = $4;",
+                                   &[&self.e_id, &self.e_year, &bonus.percentage, &bonus.company_sale])
+                        .expect("Cannot update bonus");
+                }
+
+                if let Some(insurance) = &self.insurance {
+                    client.execute("INSERT INTO insurancePlan (E_ID, e_year, insuranceType, premium, employerContribution)\
+                    VALUES ($1, $2, $3, $4, $5) \
+                    ON CONFLICT (E_ID, e_year) DO UPDATE \
+                        SET insuranceType = $3,\
+                        premium = $4, \
+                        employerContribution = $5",
+                                   &[&self.e_id, &self.e_year, &insurance.insurance_type, &insurance.premium, &insurance.employer_contribution])
+                        .expect("Cannot update insurance");
+                }
+
+                return Some(Message::EmployeeYearMessage(EmployeeYearMessage::Load {year:self.e_year, e_id:self.e_id}))
+            }
+            EmployeeYearMessage::Back => {
+                return Some(Message::SelectPage(crate::Page::ViewEmployee))
             }
             EmployeeYearMessage::DummyUpdate(_) => {}
             EmployeeYearMessage::UpdatePerformance(perf) => {
@@ -327,6 +405,72 @@ impl EmployeeYearState {
                     employer_contribution: 0.0
                 })
             }
+            EmployeeYearMessage::UpdateBonusPercentage(str) => {
+                match &self.bonus {
+                    Some(bonus) => {
+                        self.bonus = Some(Bonus {
+                            percentage: str.parse().unwrap_or(bonus.percentage),
+                            company_sale: bonus.company_sale
+                        });
+                    } None => {panic!("Updated Benefits without having data.")}
+                }
+            }
+            EmployeeYearMessage::UpdateBonusSale(str) => {
+                match &self.bonus {
+                    Some(bonus) => {
+                        self.bonus = Some(Bonus {
+                            percentage: bonus.percentage,
+                            company_sale: str.parse().unwrap_or(bonus.company_sale)
+                        });
+                    } None => {panic!("Updated Benefits without having data.")}
+                }
+            }
+            EmployeeYearMessage::CreateBonus => {
+                self.bonus = Some(Bonus{
+                    percentage: 0.0,
+                    company_sale: 0.0
+                })
+            }            
+            EmployeeYearMessage::UpdateInsuranceType(str) => {
+                match &self.insurance {
+                    Some(insurance) => {
+                        self.insurance = Some(InsurancePlan {
+                            insurance_type: str,
+                            premium: insurance.premium,
+                            employer_contribution: insurance.employer_contribution
+                        });
+                    } None => {panic!("Updated Benefits without having data.")}
+                }
+            }
+            EmployeeYearMessage::UpdateInsuranceEmployer(str) => {
+                match &self.insurance {
+                    Some(insurance) => {
+                        self.insurance = Some(InsurancePlan {
+                            insurance_type: insurance.insurance_type.clone(),
+                            premium: insurance.premium,
+                            employer_contribution: str.parse().unwrap_or(insurance.employer_contribution)
+                        });
+                    } None => {panic!("Updated Benefits without having data.")}
+                }
+            }
+            EmployeeYearMessage::UpdateInsurancePremium(str) => {
+                match &self.insurance {
+                    Some(insurance) => {
+                        self.insurance = Some(InsurancePlan {
+                            insurance_type: insurance.insurance_type.clone(),
+                            premium: str.parse().unwrap_or(insurance.premium),
+                            employer_contribution: insurance.employer_contribution
+                        });
+                    } None => {panic!("Updated Benefits without having data.")}
+                }
+            }
+            EmployeeYearMessage::CreateInsurance => {
+                self.insurance = Some(InsurancePlan{
+                    insurance_type: "".to_string(),
+                    premium: 0.0,
+                    employer_contribution: 0.0
+                })
+            }
             _ => {}
         }
         None
@@ -412,6 +556,61 @@ impl EmployeeYearState {
                         }
                     }
                 ))
+            .push(Row::new().push(Text::new("Bonus:"))
+                .push(
+                    match &self.bonus {
+                        Some(bonus) => {
+                            Column::new()
+                                .push(Row::new().push(Text::new("Percentage:"))
+                                    .push(TextInput::new(&mut self.bonus_percentage_state,
+                                                         "Percentage",
+                                                         &*bonus.percentage.to_string(),
+                                                         make_wrapper(EmployeeYearMessage::UpdateBonusPercentage))))
+                                .push(Row::new().push(Text::new("Company Sale:"))
+                                    .push(TextInput::new(&mut self.bonus_sale_state,
+                                                         "Company Sale",
+                                                         &*bonus.company_sale.to_string(),
+                                                         make_wrapper(EmployeeYearMessage::UpdateBonusSale))))
+                        } _ => {
+                            Column::new().push(Text::new("None on record."))
+                                .push(Button::new(&mut self.bonus_create_state,
+                                                  Text::new("Create Benefit"))
+                                    .on_press(Message::EmployeeYearMessage(EmployeeYearMessage::CreateBonus)))
+                        }
+                    }
+                ))
+            .push(Row::new().push(Text::new("Insurance:"))
+                .push(
+                    match &self.insurance {
+                        Some(insurance) => {
+                            Column::new()
+                                .push(Row::new().push(Text::new("Type:"))
+                                    .push(TextInput::new(&mut self.insurance_type_state,
+                                                         "type",
+                                                         &*insurance.insurance_type,
+                                                         make_wrapper(EmployeeYearMessage::UpdateInsuranceType))))
+                                .push(Row::new().push(Text::new("Premium:"))
+                                    .push(TextInput::new(&mut self.insurance_premium_state,
+                                                         "premium",
+                                                         &*insurance.premium.to_string(),
+                                                         make_wrapper(EmployeeYearMessage::UpdateInsurancePremium))))
+                                .push(Row::new().push(Text::new("Employer Contribution:"))
+                                    .push(TextInput::new(&mut self.insurance_employer_state,
+                                                         "employer contribution",
+                                                         &*insurance.employer_contribution.to_string(),
+                                                         make_wrapper(EmployeeYearMessage::UpdateInsuranceEmployer))))
+                        } _ => {
+                            Column::new().push(Text::new("None on record."))
+                                .push(Button::new(&mut self.insurance_create_state,
+                                                  Text::new("Create Insurance"))
+                                    .on_press(Message::EmployeeYearMessage(EmployeeYearMessage::CreateInsurance)))
+                        }
+                    }
+                ))
+            .push(Row::new().push(Button::new(&mut self.back_state, Text::new("Back to Employee"))
+                    .on_press(Message::EmployeeYearMessage(EmployeeYearMessage::Back)))
+                .push(Button::new(&mut self.save_state, Text::new("Update Employee"))
+                    .on_press(Message::EmployeeYearMessage(EmployeeYearMessage::Save))))
             .into()
     }
 }

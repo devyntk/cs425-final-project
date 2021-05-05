@@ -15,8 +15,8 @@ create table employeeYear(
 	salary REAL,
 	salaryType salary,
 	performance perfomance,
-	constraint emp_year primary key (E_ID, e_year),
-	foreign key (E_ID) references employee(E_ID)
+	foreign key (E_ID) references employee(E_ID),
+    PRIMARY KEY (E_ID, e_year)
 );
 
 create table socialSecurity(
@@ -25,7 +25,8 @@ create table socialSecurity(
     amount REAL not null,
     employeePays REAL,
     employerPays REAL,
-    foreign key (E_ID, e_year) references employeeYear(E_ID, e_year)
+    foreign key (E_ID, e_year) references employeeYear(E_ID, e_year),
+    PRIMARY KEY (E_ID, e_year)
 );
 create table benefits(
     E_ID INT,
@@ -33,7 +34,8 @@ create table benefits(
 	benefitType VARCHAR (20) not NULL,
 	employeeContribution REAL not NULL,
 	employerContribution REAL,
-    foreign key (E_ID, e_year) references employeeYear(E_ID, e_year)
+    foreign key (E_ID, e_year) references employeeYear(E_ID, e_year),
+    PRIMARY KEY (E_ID, e_year)
 );
 create table stateTax(
 	stateName VARCHAR(2) not null UNIQUE,
@@ -50,7 +52,8 @@ create table bonus(
 	e_year INT not NULL,
 	percentage REAL,
 	company_sale REAL,
-    foreign key (E_ID, e_year) references employeeYear(E_ID, e_year)
+    foreign key (E_ID, e_year) references employeeYear(E_ID, e_year),
+    PRIMARY KEY (E_ID, e_year)
 );
 create table insurancePlan(
 	E_ID INT,
@@ -58,7 +61,8 @@ create table insurancePlan(
 	insuranceType VARCHAR (20),
 	premium REAL,
 	employerContribution REAL,
-    foreign key (E_ID, e_year) references employeeYear(E_ID, e_year)
+    foreign key (E_ID, e_year) references employeeYear(E_ID, e_year),
+    PRIMARY KEY (E_ID, e_year)
 );
 create table dependent(
 	D_ID INT,
