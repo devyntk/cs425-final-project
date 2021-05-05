@@ -1,5 +1,5 @@
 use crate::{Message, User, UserType};
-use postgres::Client;
+use postgres::{Client, Error};
 use iced::{Column, Element, Text, Button, Row, TextInput, text_input};
 use iced::button;
 use log::{info,warn};
@@ -18,10 +18,19 @@ pub enum EmployeeMessage {
     RemoveDep(i32),
     LoadEmployee(i32),
     LoadYear(i32),
-    SaveChanges
+    SaveChanges,
+    ChangeDepID(i32, String),
+    ChangeDepName(i32, String),
+    ChangeDepSSN(i32, String),
+    ChangeDepRelation(i32, String),
+    ChangeDepBenefit(i32, String)
 }
 fn make_wrapper(variant: impl Fn(String) -> EmployeeMessage) -> impl Fn(String) -> Message{
     move |s| Message::EmployeeMessage(variant(s))
+}
+
+fn make_dep_wrapper(dep_id: i32, variant: impl Fn(i32, String) -> EmployeeMessage) -> impl Fn(String) -> Message{
+    move |s| Message::EmployeeMessage(variant(dep_id, s))
 }
 
 #[derive(Debug, Clone, Default)]
@@ -53,12 +62,52 @@ pub struct Dependent {
     d_name: String,
     ssn: String,
     relation: String,
-    benefits: String
+    benefits: String,
+
+    d_id_state: text_input::State,
+    d_name_state: text_input::State,
+    ssn_state: text_input::State,
+    relation_state: text_input::State,
+    benefits_state: text_input::State,
+    delete_state: button::State
 }
 
 impl Dependent {
-    fn view(&mut self) -> Row<Message> {
-        Row::new().push(Text::new(self.d_name.clone()))
+    fn view(&mut self) -> Column<Message> {
+        Column::new().push(
+            Row::new().push(Text::new("D_ID:"))
+                .push(TextInput::new(&mut self.d_id_state, "D_ID",
+                                     &*self.d_id.to_string(),
+                                     make_dep_wrapper(self.d_id, EmployeeMessage::ChangeDepID)
+                ))
+        ).push(
+            Row::new().push(Text::new("Name:"))
+                .push(TextInput::new(&mut self.d_name_state, "Name",
+                                     &*self.d_name,
+                                     make_dep_wrapper(self.d_id, EmployeeMessage::ChangeDepName)
+                ))
+        ).push(
+            Row::new().push(Text::new("SSN:"))
+                .push(TextInput::new(&mut self.ssn_state, "SSN",
+                                     &*self.ssn,
+                                     make_dep_wrapper(self.d_id, EmployeeMessage::ChangeDepSSN)
+                ))
+        ).push(
+            Row::new().push(Text::new("Relation:"))
+                .push(TextInput::new(&mut self.relation_state, "Relation",
+                                     &*self.relation,
+                                     make_dep_wrapper(self.d_id, EmployeeMessage::ChangeDepRelation)
+                ))
+        ).push(
+            Row::new().push(Text::new("Benefit:"))
+                .push(TextInput::new(&mut self.benefits_state, "Benefit",
+                                     &*self.benefits,
+                                     make_dep_wrapper(self.d_id, EmployeeMessage::ChangeDepBenefit)
+                ))
+        ).push(
+            Button::new(&mut self.delete_state, Text::new("Delete Dependent"))
+                .on_press(Message::EmployeeMessage(EmployeeMessage::RemoveDep(self.d_id)))
+        )
     }
 }
 
@@ -125,7 +174,13 @@ impl EmployeeState {
                         d_name: dependent.get("d_name"),
                         ssn: dependent.get("SSN"),
                         relation: dependent.get("relation"),
-                        benefits: dependent.get("benefits")
+                        benefits: dependent.get("benefits"),
+                        d_id_state: text_input::State::default(),
+                        d_name_state: text_input::State::default(),
+                        ssn_state: text_input::State::default(),
+                        relation_state: text_input::State::default(),
+                        benefits_state: text_input::State::default(),
+                        delete_state: button::State::default()
                     });
                     self.num_deps += 1;
                 };
@@ -134,6 +189,18 @@ impl EmployeeState {
                 client.execute("UPDATE employee SET SSN=$1, firstName=$2, lastName=$3, jobTitle=$4, stateAddress=$5\
                 WHERE E_ID = $6;",
                 &[&self.ssn, &self.first_name, &self.last_name, &self.job_title, &self.state_address, &self.e_id]);
+
+                for dep in self.dependents.values() {
+                    client.execute("INSERT INTO dependent (D_ID, E_ID, d_name, SSN, relation, benefits) \
+                    VALUES ($1, $2, $3, $4, $5, $6) \
+                    ON CONFLICT (D_ID, E_ID) DO UPDATE \
+                        SET d_name = $3, \
+                        SSN = $4, \
+                        relation = $5, \
+                        benefits = $6",
+                                   &[&dep.d_id, &self.e_id, &dep.d_name, &dep.ssn, &dep.relation, &dep.benefits])
+                        .expect("Cannot update dependent");
+                }
 
                 //just to cover all of our bases, let's re-load from the DB
                 return Some(Message::EmployeeMessage(EmployeeMessage::LoadEmployee(self.e_id)))
@@ -150,9 +217,62 @@ impl EmployeeState {
                        d_name: "Dependent Name".to_string(),
                        ssn: "SSN".to_string(),
                        relation: "Relation".to_string(),
-                       benefits: "Benefits".to_string()
+                       benefits: "Benefits".to_string(),
+                       d_id_state: text_input::State::default(),
+                       d_name_state: text_input::State::default(),
+                       ssn_state: text_input::State::default(),
+                       relation_state: text_input::State::default(),
+                       benefits_state: text_input::State::default(),
+                       delete_state: button::State::default()
                    });
                 self.num_deps += 1;
+            }
+            EmployeeMessage::RemoveDep(idx) => {
+                match self.dependents.get(&idx) {
+                    None => {panic!("Trying to delete unknown idx")}
+                    Some(dep) => {
+                        match client.execute("DELETE FROM dependent WHERE e_id=$1 AND d_id=$2;",
+                        &[&self.e_id, &idx]) {
+                            Ok(_) => {}
+                            Err(err) => {
+                                warn!("Failure deleting dependent: {:?}", err)
+                            }
+                        }
+                        self.dependents.remove(&idx);
+                    }
+                }
+            }
+            EmployeeMessage::ChangeDepName(idx, str) => {
+                match self.dependents.get_mut(&idx) {
+                    None => { panic!("Cannot find Dep IDX")}
+                    Some(dep) => {
+                        dep.d_name = str;
+                    }
+                }
+            }
+            EmployeeMessage::ChangeDepBenefit(idx, str) => {
+                match self.dependents.get_mut(&idx) {
+                    None => { panic!("Cannot find Dep IDX")}
+                    Some(dep) => {
+                        dep.benefits = str;
+                    }
+                }
+            }
+            EmployeeMessage::ChangeDepRelation(idx, str) => {
+                match self.dependents.get_mut(&idx) {
+                    None => { panic!("Cannot find Dep IDX")}
+                    Some(dep) => {
+                        dep.relation = str;
+                    }
+                }
+            }
+            EmployeeMessage::ChangeDepSSN(idx, str) => {
+                match self.dependents.get_mut(&idx) {
+                    None => { panic!("Cannot find Dep IDX")}
+                    Some(dep) => {
+                        dep.ssn = str;
+                    }
+                }
             }
             _ => {}
         }
@@ -215,10 +335,6 @@ impl EmployeeState {
                     make_wrapper(EmployeeMessage::ChangeAddress))
                 )
             )
-            .push(
-                button::Button::new(&mut self.save_button, Text::new("Save Changes"))
-                    .on_press(Message::EmployeeMessage(EmployeeMessage::SaveChanges))
-            )
             .push(match !self.years.is_empty() {
                 true => {
                     let mut year_row: Row<Message> = Row::new()
@@ -241,6 +357,10 @@ impl EmployeeState {
                 ).push(Button::new(&mut self.add_dep_state, Text::new("Add Dependent"))
                     .on_press(Message::EmployeeMessage(EmployeeMessage::AddDep)))
             ))
+            .push(
+                button::Button::new(&mut self.save_button, Text::new("Save Changes"))
+                    .on_press(Message::EmployeeMessage(EmployeeMessage::SaveChanges))
+            )
             .push(match user.usertype {
                 UserType::Employee => {
                     Button::new(&mut self.logout_button, Text::new("Log Out"))
