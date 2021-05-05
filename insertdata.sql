@@ -1,11 +1,9 @@
+create type usertype AS ENUM ('admin', 'manager', 'employee');
 
 create table user_tbl(
      username varchar(32) not null unique,
      psswrd varchar (64) not null,
-     IsAdmin boolean not null,
-     IsEmployee boolean not null,
-     IsEmployer boolean not null,
-     HasDependent boolean not null,
+     user_type usertype,
      E_ID INT not null,
      foreign key (E_ID) references employee(E_ID),
      primary key(E_ID)
@@ -21,11 +19,11 @@ values
 (105, 123444444, 'Khushboo', 'Bhattu', 'Agent_of_Chaos', 'OH');
 
 insert into user_tbl
-(username, psswrd, IsAdmin, IsEmployee, IsEmployer, HasDependent, E_ID)
+(username, psswrd, user_type, E_ID)
 values
-('devyn', 'password', false, true, false, false, 104),
-('khushboo', 'password', true, false, false, false, 105),
-('musky', 'password', false, false, true, true, 101);
+('devyn', 'password', 'employee', 104),
+('khushboo', 'password', 'admin', 105),
+('musky', 'password', 'manager', 101);
 
 insert into employeeYear
 (E_ID, e_year, salary, salarytype, performance)

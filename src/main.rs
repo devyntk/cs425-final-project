@@ -10,6 +10,7 @@ mod employee_expense;
 use iced::{Column, Element, Sandbox, Settings, Text};
 use postgres::{Client, NoTls};
 use log::info;
+use postgres_types::{ToSql, FromSql};
 use crate::menu::MenuMessage;
 use crate::Message::EmployeeMessage;
 
@@ -64,15 +65,23 @@ enum Message {
 struct User {
     usertype: UserType,
     username: String,
-    has_dependent: bool,
     e_id: i32
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, ToSql, FromSql)]
+#[postgres(name="usertype")]
 enum UserType {
+    #[postgres(name="employee")]
     Employee,
+    #[postgres(name="manager")]
     Manager,
+    #[postgres(name="admin")]
     Administrator,
+}
+impl Default for UserType {
+    fn default() -> Self {
+        Self::Employee
+    }
 }
 
 impl Sandbox for EmployeeDB {

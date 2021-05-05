@@ -65,6 +65,7 @@ pub struct EmployeeState {
 pub struct UserEmp {
     username: String,
     password: String,
+    user_type: crate::UserType,
     username_state: text_input::State,
     password_state: text_input::State
 }
@@ -220,6 +221,7 @@ impl EmployeeState {
                             self.user_emp = Some(UserEmp{
                                 username: user_row.get("username"),
                                 password: user_row.get("psswrd"),
+                                user_type: user_row.get("user_type"),
                                 username_state: Default::default(),
                                 password_state: Default::default()
                             })
@@ -247,16 +249,13 @@ impl EmployeeState {
                         .expect("Cannot update dependent");
                 }
                 if let Some(user) = &self.user_emp {
-                    client.execute("INSERT INTO user_tbl (username, psswrd, IsAdmin, IsEmployee, IsEmployer, HasDependent, E_ID) \
-                    VALUES ($1, $2, $3, $4, $5, $6, $7) \
+                    client.execute("INSERT INTO user_tbl (username, psswrd, user_type, E_ID) \
+                    VALUES ($1, $2, $3, $4) \
                     ON CONFLICT (E_ID) DO UPDATE \
                         SET username = $1, \
                         psswrd = $2, \
-                        IsAdmin = $3, \
-                        IsEmployee = $4, \
-                        IsEmployer = $5, \
-                        HasDependent = $6",
-                                   &[&user.username, &user.password, &false, &true, &false, &false, &self.e_id])
+                        user_type = $3",
+                                   &[&user.username, &user.password, &user.user_type, &self.e_id])
                         .expect("Cannot update dependent");
 
                 }
