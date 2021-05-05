@@ -23,7 +23,7 @@ pub struct EmployeeExpenseState {
     bonus: i32,
     retirement: i32,
     ssn_contribution: i32,
-    insurance: i32,
+    insurance: i32
 }
 impl EmployeeExpenseState {
     pub fn new() -> Self {
@@ -33,13 +33,19 @@ impl EmployeeExpenseState {
     pub(crate) fn update(&mut self, msg: EmployeeExpenseMessage, client: &mut Client, user: &User) -> Option<Message> {
         match msg {
             EmployeeExpenseMessage::company_employee_expense(year) => {
-                let employee =client.query_one("SELECT * FROM employee WHERE E_ID = $1", &[&e_id])
-                    .expect("Can't find employee!");
-                let wages = client.query("SELECT find_wages($1, $2)", &[&e_id, &report_year]);
-                let bonus = client.query("SELECT bonus_paid($1, $2)", &[&e_id, &report_year]);
-                let retirement = client.query("SELECT retirement_employer($1, $2)", &[&e_id, &report_year]);
-                let ssn_contribution = client.query("SELECT ssn_employer($1, $2)", &[&e_id, &report_year]);
-                let insurance = client.query("SELECT insurance_employer($1, $2)", &[&e_id, &report_year]);
+                let years = client.query("SELECT e_year FROM employeeYear WHERE e_id = $1;", &[&e_id])
+                    .expect("Cannot Find Years");
+                for year in years {
+                    let wages = client.query("SELECT find_wages($1)", &[&report_year]);
+                    let bonus = client.query("SELECT bonus_paid($1)", &[&report_year]);
+                    let retirement = client.query("SELECT retirement_employer($1)", &[&report_year]);
+                    let ssn_contribution = client.query("SELECT ssn_employer($1)", &[&report_year]);
+                    let insurance = client.query("SELECT insurance_employer($1, $2)", &[&report_year]);
+                    let expenses = client.query("SELECT find_wages($1) inner join", &[&report_year])
+                    println!("Wages: {:?}, Bonus: {:?}, 401k Contribution: {:?}, SSN Contribution: {:?}, Insurance Premium Contribution: {:?}", wages, bonus, retirement, ssn_contribution, insurance);
+                    println!();
+
+                };
             }
         }
         None
