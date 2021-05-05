@@ -50,7 +50,7 @@ impl W2State {
                 println!("yearly income: {:?}", income);
                 println!("deductions: {:?}", deductions);
                 println!("Bonus: {:?} ", bonus);
-                println!("EMPLOYEE W2: {:?}", w2_report);
+                println!("EMPLOYEE W2: {:?}", report);
             }
         }
         None

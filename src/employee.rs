@@ -36,6 +36,7 @@ pub struct EmployeeState {
     job_title_state: text_input::State,
     address_state: text_input::State,
     save_button: button::State,
+    logout_button: button::State,
     years: Vec<i32>,
     year_states: Vec<button::State>
 }
@@ -101,7 +102,9 @@ impl EmployeeState {
                 return Some(Message::EmployeeMessage(EmployeeMessage::LoadEmployee(self.e_id)))
             }
             EmployeeMessage::LoadYear(year) => {
-                info!("Lookup year {}", year)
+                return Some(Message::EmployeeYearMessage(
+                    crate::employee_year::EmployeeYearMessage::Load { year, e_id: self.e_id }
+                ))
             }
         }
         None
@@ -174,11 +177,22 @@ impl EmployeeState {
 
                     for (i, state) in self.year_states.iter_mut().enumerate() {
                         year_row = year_row.push(Button::new(state, Text::new(self.years[i].to_string()))
-                            .on_press(Message::EmployeeMessage(LoadYear(i as i32))));
+                            .on_press(Message::EmployeeMessage(LoadYear(self.years[i] as i32))));
                     }
                     year_row
                 }
                 false => {Row::new().push(Text::new("No associated Years found."))}
+            })
+            .push(match user.usertype {
+                UserType::Employee => {
+                    Button::new(&mut self.logout_button, Text::new("Log Out"))
+                        .on_press(Message::LogOut)
+                }
+                _ => {
+                    Button::new(&mut self.logout_button, Text::new("Back to Menu"))
+                        .on_press(Message::SelectPage(crate::Page::Main))
+
+                }
             });
 
         column.into()
