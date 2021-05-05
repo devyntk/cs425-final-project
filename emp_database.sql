@@ -16,7 +16,6 @@ create table employeeYear(
 	salaryType salary,
 	performance perfomance,
 	constraint emp_year primary key (E_ID, e_year),
-
 	foreign key (E_ID) references employee(E_ID)
 );
 

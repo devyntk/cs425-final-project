@@ -2,7 +2,8 @@ use crate::{Message, User, UserType};
 use postgres::Client;
 use iced::{Column, Element, Text, Button, Row, TextInput, text_input};
 use iced::button;
-use log::warn;
+use log::{info,warn};
+use crate::employee::EmployeeMessage::LoadYear;
 
 #[derive(Debug,Clone)]
 pub enum EmployeeMessage {
@@ -13,6 +14,7 @@ pub enum EmployeeMessage {
     ChangeJobTitle(String),
     ChangeAddress(String),
     LoadEmployee(i32),
+    LoadYear(i32),
     SaveChanges
 }
 fn make_wrapper(variant: impl Fn(String) -> EmployeeMessage) -> impl Fn(String) -> Message{
@@ -34,7 +36,8 @@ pub struct EmployeeState {
     job_title_state: text_input::State,
     address_state: text_input::State,
     save_button: button::State,
-    years: Vec<i32>
+    years: Vec<i32>,
+    year_states: Vec<button::State>
 }
 
 impl EmployeeState {
@@ -71,7 +74,7 @@ impl EmployeeState {
                 self.state_address = str;
             }
             EmployeeMessage::LoadEmployee(e_id) => {
-                let employee =client.query_one("SELECT * FROM employee WHERE E_ID = $1", &[&e_id])
+                let employee = client.query_one("SELECT * FROM employee WHERE E_ID = $1;", &[&e_id])
                     .expect("Can't find employee!");
                 self.e_id = employee.get("E_ID");
                 self.ssn = employee.get("SSN");
@@ -80,26 +83,32 @@ impl EmployeeState {
                 self.job_title = employee.get("jobTitle");
                 self.state_address = employee.get("stateAddress");
 
-                let years = client.query("SELECT * FROM employeeYear WHERE E_ID = $1", &[&e_id]);
-                self.years = vec![];
-                for year in years.unwrap() {
-                    self.years.push(year.get("e_year"))
-                }
+                let years = client.query("SELECT e_year FROM employeeYear WHERE e_id = $1;", &[&e_id])
+                    .expect("Cannot Find Years");
+                self.years = Vec::new();
+                self.year_states = Vec::new();
+                for year in years {
+                    self.years.push(year.get("e_year"));
+                    self.year_states.push(button::State::new());
+                };
             }
             EmployeeMessage::SaveChanges => {
                 client.execute("UPDATE employee SET SSN=$1, firstName=$2, lastName=$3, jobTitle=$4, stateAddress=$5\
-                WHERE E_ID = $6",
+                WHERE E_ID = $6;",
                 &[&self.ssn, &self.first_name, &self.last_name, &self.job_title, &self.state_address, &self.e_id]);
 
                 //just to cover all of our bases, let's re-load from the DB
                 return Some(Message::EmployeeMessage(EmployeeMessage::LoadEmployee(self.e_id)))
+            }
+            EmployeeMessage::LoadYear(year) => {
+                info!("Lookup year {}", year)
             }
         }
         None
     }
 
     pub(crate) fn view(&mut self, user: &User) -> Element<Message> {
-        Column::new()
+        let mut column: Column<Message> = Column::new()
             .push( Row::new()
                 .push(Text::new("Employee ID:"))
                 .push(TextInput::new(
@@ -158,6 +167,20 @@ impl EmployeeState {
                 button::Button::new(&mut self.save_button, Text::new("Save Changes"))
                     .on_press(Message::EmployeeMessage(EmployeeMessage::SaveChanges))
             )
-            .into()
+            .push(match !self.years.is_empty() {
+                true => {
+                    let mut year_row: Row<Message> = Row::new()
+                        .push(Text::new("Years on Record:"));
+
+                    for (i, state) in self.year_states.iter_mut().enumerate() {
+                        year_row = year_row.push(Button::new(state, Text::new(self.years[i].to_string()))
+                            .on_press(Message::EmployeeMessage(LoadYear(i as i32))));
+                    }
+                    year_row
+                }
+                false => {Row::new().push(Text::new("No associated Years found."))}
+            });
+
+        column.into()
     }
 }

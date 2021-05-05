@@ -51,7 +51,7 @@ impl LoginState {
                     return None;
                 }
                 self.disabled = true;
-                let user = client.query_opt("SELECT * FROM user_tbl WHERE username = $1 AND psswrd = $2", &[&self.username, &self.password]);
+                let user = client.query_opt("SELECT * FROM user_tbl WHERE username = $1 AND psswrd = $2;", &[&self.username, &self.password]);
                 match user {
                     Ok(result) => {
                         match result {

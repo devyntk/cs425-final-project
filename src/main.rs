@@ -9,6 +9,7 @@ mod employee_expense;
 
 use iced::{Column, Element, Sandbox, Settings, Text};
 use postgres::{Client, NoTls};
+use log::info;
 use crate::menu::MenuMessage;
 use crate::Message::EmployeeMessage;
 
@@ -99,6 +100,7 @@ impl Sandbox for EmployeeDB {
     }
 
     fn update(&mut self, message: Self::Message) {
+        info!("{:?}", message);
         match message {
             // module message handlers
             // allows the module update methods to return a Option<Message> that can also be
