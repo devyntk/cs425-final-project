@@ -49,12 +49,12 @@ impl PaycheckState {
                 self.last_name = employee.get("lastName");
                 self.state_address = employee.get( "stateAddress");
                 self.report_year = report_year;
-                println!("Employee Name: {} {}", self.first_name, self.last_name);
+                /*println!("Employee Name: {} {}", self.first_name, self.last_name);
                 println!("ssn: {} ", self.ssn);
                 println!("Tax Deductions: {:?} [state tax], {:?} [federal tax], {:?} [social security] {:?} [medicare]", statetax, brackettax, social_sec, medicare);
                 println!("401k contribution: {:?}", four_one_k);
                 println!("insurance premium: {:?}", insurance);
-                println!("EMPLOYEE PAYCHECK: {:?}", paycheck);
+                println!("EMPLOYEE PAYCHECK: {:?}", paycheck);*/
             }
         }
         None
@@ -62,6 +62,36 @@ impl PaycheckState {
 
     pub(crate) fn view(&mut self, user: &User) -> Element<Message> {
         Column::new()
+            .push(Row::new()
+                .push(Text::new("Employee Name:"))
+                .push(Text::new(&*self.first_name &*self.last_name)))
+            .push(Row::new()
+                .push(Text::new("SSN: "))
+                .push(Text::new(&*self.ssn)))
+            .push(Row::new()
+                .push(Text::new("Tax Deductions: "))
+                .push(Text:new(&statetax))
+                .push(Text::new(&brackettax)))
+            .push(Row::new()
+                .push(Text::new("401k contribution: "))
+                .push(Text::new(&fouronek)))
+            .push(Row::new()
+                .push(Text::new("Insurance Premium contribution: "))
+                .push(Text::new(&insurance)))
+            .push(Row::new()
+                .push(Text::new("EMPLOYEE PAYCHECK: "))
+                .push(Text::new(&paycheck)))
+            .push(match user.usertype {
+                UserType::Manager => {
+                    Button::new(&mut self.logout_button, Text::new("Log Out"))
+                        .on_press(Message::LogOut)
+                }
+                _ => {
+                    Button::new(&mut self.logout_button, Text::new("Back to Menu"))
+                        .on_press(Message::SelectPage(crate::Page::Main))
+
+                }
+            })
             .into()
     }
 }

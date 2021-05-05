@@ -45,12 +45,13 @@ impl W2State {
                 let deductions = client.query("SELECT deductions($1, $2)", &[&e_id, &report_year]);
                 let bonus = client.query("SELECT bonus_earned($1, $2)", &[&e_id, &report_year]);
                 let report = client.query("SELECT w2_report($1, $2)", &[&e_id, &report_year]);
-                println!("Employee Name: {} {}", self.first_name, self.last_name);
+                /*println!("Employee Name: {} {}", self.first_name, self.last_name);
                 println!("ssn: {} ", self.ssn);
                 println!("yearly income: {:?}", income);
                 println!("deductions: {:?}", deductions);
                 println!("Bonus: {:?} ", bonus);
-                println!("EMPLOYEE W2: {:?}", report);
+                println!("EMPLOYEE W2: {:?}", report);*/
+                //return Some(Message::W2Message(W2Message::W2_report(self.e_id, self.report_year)))
             }
         }
         None
@@ -58,6 +59,32 @@ impl W2State {
 
     pub(crate) fn view(&mut self, user: &User) -> Element<Message> {
         Column::new()
+            .push(Row::new()
+                .push(Text::new("Employee Name:"))
+                .push(Text::new(&*self.first_name &*self.last_name)))
+            .push(Row::new()
+                .push(Text::new("SSN: "))
+                .push(Text::new(&*self.ssn)))
+            .push(Row::new()
+                .push(Text::new("Yearly income: "))
+                .push(Text:new(&income)))
+            .push(Row::new()
+                .push(Text::new("Bonus: "))
+                .push(Text::new(&bonus)))
+            .push(Row::new()
+                .push(Text::new("EMPLOYEE W2: "))
+                .push(Text::new(&report)))
+            .push(match user.usertype {
+                UserType::Manager => {
+                    Button::new(&mut self.logout_button, Text::new("Log Out"))
+                        .on_press(Message::LogOut)
+                }
+                _ => {
+                    Button::new(&mut self.logout_button, Text::new("Back to Menu"))
+                        .on_press(Message::SelectPage(crate::Page::Main))
+
+                }
+            })
             .into()
     }
 }
