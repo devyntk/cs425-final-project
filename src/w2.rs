@@ -24,7 +24,8 @@ pub struct W2State {
     report_year: i32,
     yearly_income: i32,
     deductions: i32,
-    bonus: i32
+    bonus: i32,
+    logout_button: button::State
 }
 impl W2State {
     pub fn new() -> Self {
@@ -61,19 +62,19 @@ impl W2State {
         Column::new()
             .push(Row::new()
                 .push(Text::new("Employee Name:"))
-                .push(Text::new(&*self.first_name &*self.last_name)))
+                .push(Text::new(&*self.first_name)))
             .push(Row::new()
                 .push(Text::new("SSN: "))
                 .push(Text::new(&*self.ssn)))
-            .push(Row::new()
-                .push(Text::new("Yearly income: "))
-                .push(Text:new(&income)))
+            // .push(Row::new()
+            //     .push(Text::new("Yearly income: "))
+            //     .push(Text::new(&self.income)))
             .push(Row::new()
                 .push(Text::new("Bonus: "))
-                .push(Text::new(&bonus)))
-            .push(Row::new()
-                .push(Text::new("EMPLOYEE W2: "))
-                .push(Text::new(&report)))
+                .push(Text::new(&self.bonus.to_string())))
+            // .push(Row::new()
+            //     .push(Text::new("EMPLOYEE W2: "))
+            //     .push(Text::new(&self.report)))
             .push(match user.usertype {
                 UserType::Manager => {
                     Button::new(&mut self.logout_button, Text::new("Log Out"))

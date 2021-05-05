@@ -71,7 +71,8 @@ create table dependent(
 	SSN VARCHAR(9) not null unique,
 	relation VARCHAR (20),
 	benefits VARCHAR(20),
-	foreign key (E_ID) references employee(E_ID)
+	foreign key (E_ID) references employee(E_ID),
+	PRIMARY KEY (E_ID, D_ID)
 );
 
 create index ssn_index on employee(SSN);

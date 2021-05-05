@@ -24,7 +24,8 @@ pub struct PaycheckState {
     state_tax: i32,
     four_one_k: i32,
     insurance_premium: i32,
-    report_year: i32
+    report_year: i32,
+    logout_button: button::State
 }
 impl PaycheckState {
     pub fn new() -> Self {
@@ -64,23 +65,23 @@ impl PaycheckState {
         Column::new()
             .push(Row::new()
                 .push(Text::new("Employee Name:"))
-                .push(Text::new(&*self.first_name &*self.last_name)))
+                .push(Text::new(&*self.first_name)))
             .push(Row::new()
                 .push(Text::new("SSN: "))
                 .push(Text::new(&*self.ssn)))
-            .push(Row::new()
-                .push(Text::new("Tax Deductions: "))
-                .push(Text:new(&statetax))
-                .push(Text::new(&brackettax)))
-            .push(Row::new()
-                .push(Text::new("401k contribution: "))
-                .push(Text::new(&fouronek)))
-            .push(Row::new()
-                .push(Text::new("Insurance Premium contribution: "))
-                .push(Text::new(&insurance)))
-            .push(Row::new()
-                .push(Text::new("EMPLOYEE PAYCHECK: "))
-                .push(Text::new(&paycheck)))
+            // .push(Row::new()
+            //     .push(Text::new("Tax Deductions: "))
+            //     .push(Text::new(&self.statetax))
+            //     .push(Text::new(&self.brackettax)))
+            // .push(Row::new()
+            //     .push(Text::new("401k contribution: "))
+            //     .push(Text::new(&self.fouronek)))
+            // .push(Row::new()
+            //     .push(Text::new("Insurance Premium contribution: "))
+            //     .push(Text::new(&self.insurance)))
+            // .push(Row::new()
+            //     .push(Text::new("EMPLOYEE PAYCHECK: "))
+            //     .push(Text::new(&self.paycheck)))
             .push(match user.usertype {
                 UserType::Manager => {
                     Button::new(&mut self.logout_button, Text::new("Log Out"))

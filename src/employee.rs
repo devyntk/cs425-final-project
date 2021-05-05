@@ -4,6 +4,7 @@ use iced::{Column, Element, Text, Button, Row, TextInput, text_input};
 use iced::button;
 use log::{info,warn};
 use crate::employee::EmployeeMessage::LoadYear;
+use std::collections::HashMap;
 
 #[derive(Debug,Clone)]
 pub enum EmployeeMessage {
@@ -38,7 +39,23 @@ pub struct EmployeeState {
     save_button: button::State,
     logout_button: button::State,
     years: Vec<i32>,
-    year_states: Vec<button::State>
+    year_states: Vec<button::State>,
+    dependents: HashMap<i32, Dependent>
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct Dependent {
+    d_id: i32,
+    d_name: String,
+    ssn: String,
+    relation: String,
+    benefits: String
+}
+
+impl Dependent {
+    fn view(&mut self) -> Row<Message> {
+        Row::new().push(Text::new(self.d_name.clone()))
+    }
 }
 
 impl EmployeeState {
@@ -91,6 +108,20 @@ impl EmployeeState {
                 for year in years {
                     self.years.push(year.get("e_year"));
                     self.year_states.push(button::State::new());
+                };
+
+                let dependents = client.query("SELECT * FROM dependent WHERE e_id = $1;", &[&e_id])
+                    .expect("Cannot Find dependent(s)");
+                self.dependents = HashMap::new();
+                for dependent in dependents {
+                    self.dependents.insert(dependent.get("d_id"),
+                    Dependent{
+                        d_id: dependent.get("d_id"),
+                        d_name: dependent.get("d_name"),
+                        ssn: dependent.get("SSN"),
+                        relation: dependent.get("relation"),
+                        benefits: dependent.get("benefits")
+                    });
                 };
             }
             EmployeeMessage::SaveChanges => {
@@ -183,6 +214,14 @@ impl EmployeeState {
                 }
                 false => {Row::new().push(Text::new("No associated Years found."))}
             })
+            .push(Row::new().push(Text::new("Dependents:"))
+                .push(self.dependents.iter_mut().fold(
+                    Column::new(),
+                    |parent: Column<Message>, (d_id, dep)| {
+                        parent.push(dep.view())
+                    }
+                )
+            ))
             .push(match user.usertype {
                 UserType::Employee => {
                     Button::new(&mut self.logout_button, Text::new("Log Out"))
