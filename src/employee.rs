@@ -14,6 +14,8 @@ pub enum EmployeeMessage {
     ChangeSSN(String),
     ChangeJobTitle(String),
     ChangeAddress(String),
+    AddDep,
+    RemoveDep(i32),
     LoadEmployee(i32),
     LoadYear(i32),
     SaveChanges
@@ -40,7 +42,9 @@ pub struct EmployeeState {
     logout_button: button::State,
     years: Vec<i32>,
     year_states: Vec<button::State>,
-    dependents: HashMap<i32, Dependent>
+    dependents: HashMap<i32, Dependent>,
+    num_deps: i32,
+    add_dep_state: button::State
 }
 
 #[derive(Debug, Clone, Default)]
@@ -113,6 +117,7 @@ impl EmployeeState {
                 let dependents = client.query("SELECT * FROM dependent WHERE e_id = $1;", &[&e_id])
                     .expect("Cannot Find dependent(s)");
                 self.dependents = HashMap::new();
+                self.num_deps = 0;
                 for dependent in dependents {
                     self.dependents.insert(dependent.get("d_id"),
                     Dependent{
@@ -122,6 +127,7 @@ impl EmployeeState {
                         relation: dependent.get("relation"),
                         benefits: dependent.get("benefits")
                     });
+                    self.num_deps += 1;
                 };
             }
             EmployeeMessage::SaveChanges => {
@@ -137,6 +143,18 @@ impl EmployeeState {
                     crate::employee_year::EmployeeYearMessage::Load { year, e_id: self.e_id }
                 ))
             }
+            EmployeeMessage::AddDep => {
+                self.dependents.insert(self.num_deps+1,
+                   Dependent{
+                       d_id: self.num_deps+1,
+                       d_name: "Dependent Name".to_string(),
+                       ssn: "SSN".to_string(),
+                       relation: "Relation".to_string(),
+                       benefits: "Benefits".to_string()
+                   });
+                self.num_deps += 1;
+            }
+            _ => {}
         }
         None
     }
@@ -220,7 +238,8 @@ impl EmployeeState {
                     |parent: Column<Message>, (d_id, dep)| {
                         parent.push(dep.view())
                     }
-                )
+                ).push(Button::new(&mut self.add_dep_state, Text::new("Add Dependent"))
+                    .on_press(Message::EmployeeMessage(EmployeeMessage::AddDep)))
             ))
             .push(match user.usertype {
                 UserType::Employee => {
