@@ -174,6 +174,18 @@ returns numeric(10,2) as $$
     end
 $$ language plpgsql;
 
+/*employee_contribution to medicare*/
+create function medicare(employee_ID int)
+    returns numeric(10,2) as $$
+    declare contribution numeric(10,2);
+    declare benefit_type varchar(20);
+    begin
+        select benefitType into benefit_type from benefits where E_ID=employee_ID;
+        select employeeContribution into contribution from benefits where benefit_type='medicare' and employee_ID=E_ID;
+        return contribution;
+    end
+$$ language plpgsql;
+
 /*find insurance premium cost using employee_ID and specific year*/
 create function insurance_premium(employee_ID int, yr DATE)
 returns numeric(10,2) as $$

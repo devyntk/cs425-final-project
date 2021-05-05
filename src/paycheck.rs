@@ -6,6 +6,7 @@ use log::warn;
 
 #[derive(Debug,Clone)]
 pub enum PaycheckMessage {
+    paycheck_report(i32, i32)
 }
 fn make_wrapper(variant: impl Fn(String) -> PaycheckMessage) -> impl Fn(String) -> Message{
     move |s| Message::PaycheckMessage(variant(s))
@@ -14,7 +15,16 @@ fn make_wrapper(variant: impl Fn(String) -> PaycheckMessage) -> impl Fn(String) 
 
 #[derive(Debug, Clone, Default)]
 pub struct PaycheckState {
-
+    e_id: i32,
+    ssn: String,
+    first_name: String,
+    last_name: String,
+    state_address: String,
+    medicare: i32,
+    state_tax: i32,
+    four_one_k: i32,
+    insurance_premium: i32,
+    report_year: i32
 }
 impl PaycheckState {
     pub fn new() -> Self {
@@ -23,6 +33,29 @@ impl PaycheckState {
 
     pub(crate) fn update(&mut self, msg: PaycheckMessage, client: &mut Client, user: &User) -> Option<Message> {
         match msg {
+            PaycheckMessage::paycheck_report(e_id, report_year) => {
+                let employee =client.query_one("SELECT * FROM employee WHERE E_ID = $1", &[&e_id])
+                    .expect("Can't find employee!");
+                let statetax = client.query("SELECT stateTax($1, $2)", &[&e_id, &report_year]);
+                let brackettax = client.query("SELECT bracket($1, $2)", &[&e_id, &report_year]);
+                let four_one_k = client.query("SELECT Val401k($1)", &[&e_id]);
+                let social_sec = client.query("SELECT socialSec($1, $2)", &[&e_id, &report_year]);
+                let insurance = client.query("SELECT insurance_premium($1, $2)", &[&e_id, &report_year]);
+                let medicare = client.query("SELECT medicare($1, $2)", &[&e_id, &report_year]);
+                let paycheck = client.query("SELECT paycheck($1, $2)", &[&e_id, &report_year]);
+                self.e_id = employee.get("E_ID");
+                self.ssn = employee.get("SSN");
+                self.first_name = employee.get("firstName");
+                self.last_name = employee.get("lastName");
+                self.state_address = employee.get( "stateAddress");
+                self.report_year = report_year;
+                println!("Employee Name: {} {}", self.first_name, self.last_name);
+                println!("ssn: {} ", self.ssn);
+                println!("Tax Deductions: {:?} [state tax], {:?} [federal tax], {:?} [social security] {:?} [medicare]", statetax, brackettax, social_sec, medicare);
+                println!("401k contribution: {:?}", four_one_k);
+                println!("insurance premium: {:?}", insurance);
+                println!("EMPLOYEE PAYCHECK: {:?}", paycheck);
+            }
         }
         None
     }
