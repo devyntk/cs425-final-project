@@ -1,8 +1,8 @@
 use crate::{Message, User, UserType};
-use postgres::{Client, Error};
+use postgres::Client;
 use iced::{Column, Element, Text, Button, Row, TextInput, text_input};
 use iced::button;
-use log::{info,warn};
+use log::warn;
 use crate::employee::EmployeeMessage::LoadYear;
 use std::collections::HashMap;
 
@@ -154,7 +154,7 @@ impl EmployeeState {
             EmployeeMessage::ChangeLastName(str) => {
                 self.last_name = str;
             }
-            EmployeeMessage::ChangeEID(str) => {
+            EmployeeMessage::ChangeEID(_str) => {
                 warn!("You should not be modifying the E_ID!")
                 // if user.usertype == UserType::Administrator {
                 //     self.e_id = str.parse().expect("Cannot parse Employee ID!");
@@ -235,7 +235,8 @@ impl EmployeeState {
             EmployeeMessage::SaveChanges => {
                 client.execute("UPDATE employee SET SSN=$1, firstName=$2, lastName=$3, jobTitle=$4, stateAddress=$5\
                 WHERE E_ID = $6;",
-                &[&self.ssn, &self.first_name, &self.last_name, &self.job_title, &self.state_address, &self.e_id]);
+                &[&self.ssn, &self.first_name, &self.last_name, &self.job_title, &self.state_address, &self.e_id])
+                    .expect("Unable to update employee");
 
                 for dep in self.dependents.values() {
                     client.execute("INSERT INTO dependent (D_ID, E_ID, d_name, SSN, relation, benefits) \
@@ -288,7 +289,7 @@ impl EmployeeState {
             EmployeeMessage::RemoveDep(idx) => {
                 match self.dependents.get(&idx) {
                     None => {panic!("Trying to delete unknown idx")}
-                    Some(dep) => {
+                    Some(_dep) => {
                         match client.execute("DELETE FROM dependent WHERE e_id=$1 AND d_id=$2;",
                         &[&self.e_id, &idx]) {
                             Ok(_) => {}
@@ -354,7 +355,7 @@ impl EmployeeState {
     }
 
     pub(crate) fn view(&mut self, user: &User) -> Element<Message> {
-        let mut column: Column<Message> = Column::new()
+        let column: Column<Message> = Column::new()
             .push( Row::new()
                 .push(Text::new("Employee ID:"))
                 .push(TextInput::new(
@@ -425,7 +426,7 @@ impl EmployeeState {
             .push(Row::new().push(Text::new("Dependents:"))
                 .push(self.dependents.iter_mut().fold(
                     Column::new(),
-                    |parent: Column<Message>, (d_id, dep)| {
+                    |parent: Column<Message>, (_d_id, dep)| {
                         parent.push(dep.view())
                     }
                 ).push(Button::new(&mut self.add_dep_state, Text::new("Add Dependent"))

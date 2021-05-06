@@ -1,7 +1,7 @@
 use iced::{text_input, Column, Element};
 use iced::button;
 use iced::Text;
-use crate::{Message, User, UserType};
+use crate::{Message, User};
 use postgres::Client;
 
 #[derive(Debug,Clone)]

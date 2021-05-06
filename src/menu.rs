@@ -7,9 +7,6 @@ use iced::button::State;
 pub enum MenuMessage {
     LogOut
 }
-fn make_wrapper(variant: impl Fn(String) -> MenuMessage) -> impl Fn(String) -> Message{
-    move |s| Message::MenuMessage(variant(s))
-}
 
 #[derive(Debug, Clone)]
 pub struct MenuState {
@@ -23,7 +20,7 @@ impl MenuState {
         }
     }
 
-    pub(crate) fn update(&mut self, msg: MenuMessage, client: &mut Client) -> Option<Message> {
+    pub(crate) fn update(&mut self, msg: MenuMessage, _client: &mut Client) -> Option<Message> {
         return match msg {
             MenuMessage::LogOut => {
                 Some(Message::LogOut)
