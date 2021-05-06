@@ -22,6 +22,7 @@ pub struct W2State {
     job_title: String,
     state_address: String,
     report_year: i32,
+    report: i32,
     yearly_income: i32,
     deductions: i32,
     bonus: i32,
@@ -42,17 +43,14 @@ impl W2State {
                 self.first_name = employee.get("firstName");
                 self.last_name = employee.get("lastName");
                 self.report_year = report_year;
-                let income = client.query("SELECT yearly_income($1, $2)", &[&e_id, &report_year]);
-                let deductions = client.query("SELECT deductions($1, $2)", &[&e_id, &report_year]);
-                let bonus = client.query("SELECT bonus_earned($1, $2)", &[&e_id, &report_year]);
-                let report = client.query("SELECT w2_report($1, $2)", &[&e_id, &report_year]);
-                /*println!("Employee Name: {} {}", self.first_name, self.last_name);
-                println!("ssn: {} ", self.ssn);
-                println!("yearly income: {:?}", income);
-                println!("deductions: {:?}", deductions);
-                println!("Bonus: {:?} ", bonus);
-                println!("EMPLOYEE W2: {:?}", report);*/
-                //return Some(Message::W2Message(W2Message::W2_report(self.e_id, self.report_year)))
+                let income = client.query_one("SELECT yearly_income($1, $2)", &[&e_id, &report_year]);
+                let deductions = client.query_one("SELECT deductions($1, $2)", &[&e_id, &report_year]);
+                let bonus = client.query_one("SELECT bonus_earned($1, $2)", &[&e_id, &report_year]);
+                let report = client.query_one("SELECT w2_report($1, $2)", &[&e_id, &report_year]);
+                self.yearly_income = income.unwrap().get("annual_income");
+                self.deductions = deductions.unwrap().get("total");
+                self.bonus = bonus.unwrap().get("bonus");
+                self.report = report.unwrap().get("total");
             }
         }
         None
@@ -66,15 +64,18 @@ impl W2State {
             .push(Row::new()
                 .push(Text::new("SSN: "))
                 .push(Text::new(&*self.ssn)))
-            // .push(Row::new()
-            //     .push(Text::new("Yearly income: "))
-            //     .push(Text::new(&self.income)))
+            .push(Row::new()
+                .push(Text::new("Yearly income: "))
+                .push(Text::new(format!("{:?}", self.yearly_income))))
+            .push(Row::new()
+                .push(Text::new("Deductions: "))
+                .push(Text::new(format!("{:?}", self.deductions))))
             .push(Row::new()
                 .push(Text::new("Bonus: "))
-                .push(Text::new(&self.bonus.to_string())))
-            // .push(Row::new()
-            //     .push(Text::new("EMPLOYEE W2: "))
-            //     .push(Text::new(&self.report)))
+                .push(Text::new(format!("{:?}", self.bonus))))
+            .push(Row::new()
+                .push(Text::new("EMPLOYEE W2: "))
+                .push(Text::new(format!("{:?}", self.report))))
             .push(match user.usertype {
                 UserType::Manager => {
                     Button::new(&mut self.logout_button, Text::new("Log Out"))
