@@ -405,6 +405,15 @@ impl EmployeeState {
                 }
                 Some(user) => user.password = str,
             },
+            EmployeeMessage::MakeLogin => {
+                self.user_emp = Some(UserEmp{
+                    username: "username".to_string(),
+                    password: "password".to_string(),
+                    user_type: UserType::Employee,
+                    username_state: Default::default(),
+                    password_state: Default::default()
+                })
+            }
             EmployeeMessage::ChangeYear(str) => {
                 self.year = str.parse().unwrap_or(self.year);
             }

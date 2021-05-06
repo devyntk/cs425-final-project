@@ -369,7 +369,7 @@ impl EmployeeYearState {
                 }
             }
             EmployeeYearMessage::UpdateSalary(salary) => {
-                if user.usertype == UserType::Administrator {
+                if user.is_manager() {
                     self.salary = salary.parse().unwrap_or(self.salary);
                 }
             }
