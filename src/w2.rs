@@ -1,21 +1,17 @@
-use crate::{Message, User, UserType, Page};
-use postgres::Client;
-use iced::{Column, Element, Text, Button, Row, TextInput, text_input};
+use crate::{Message, Page, User, UserType};
 use iced::button;
+use iced::{text_input, Button, Column, Element, Row, Text, TextInput};
 use log::warn;
+use postgres::Client;
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub enum W2Message {
-    W2Report {
-        year: i32,
-        e_id: i32
-    },
-    Back
+    W2Report { year: i32, e_id: i32 },
+    Back,
 }
-fn make_wrapper(variant: impl Fn(String) -> W2Message) -> impl Fn(String) -> Message{
+fn make_wrapper(variant: impl Fn(String) -> W2Message) -> impl Fn(String) -> Message {
     move |s| Message::W2Message(variant(s))
 }
-
 
 #[derive(Debug, Clone, Default)]
 pub struct W2State {
@@ -30,17 +26,23 @@ pub struct W2State {
     yearly_income: f32,
     deductions: f32,
     bonus: f32,
-    logout_button: button::State
+    logout_button: button::State,
 }
 impl W2State {
     pub fn new() -> Self {
         W2State::default()
     }
 
-    pub(crate) fn update(&mut self, msg: W2Message, client: &mut Client, user: &User) -> Option<Message> {
+    pub(crate) fn update(
+        &mut self,
+        msg: W2Message,
+        client: &mut Client,
+        user: &User,
+    ) -> Option<Message> {
         match msg {
-            W2Message::W2Report{e_id, year} => {
-                let employee =client.query_one("SELECT * FROM employee WHERE E_ID = $1", &[&e_id])
+            W2Message::W2Report { e_id, year } => {
+                let employee = client
+                    .query_one("SELECT * FROM employee WHERE E_ID = $1", &[&e_id])
                     .expect("Can't find employee!");
                 self.e_id = employee.get("E_ID");
                 self.ssn = employee.get("SSN");
@@ -58,35 +60,47 @@ impl W2State {
 
                 return Some(Message::SelectPage(Page::W2));
             }
-            W2Message::Back => {
-                return Some(Message::SelectPage(Page::ViewEmployeeYear))
-            }
+            W2Message::Back => return Some(Message::SelectPage(Page::ViewEmployeeYear)),
         }
         None
     }
 
     pub(crate) fn view(&mut self, user: &User) -> Element<Message> {
         Column::new()
-            .push(Row::new()
-                .push(Text::new("Employee Name:"))
-                .push(Text::new(&*self.first_name)))
-            .push(Row::new()
-                .push(Text::new("SSN: "))
-                .push(Text::new(&*self.ssn)))
-            .push(Row::new()
-                .push(Text::new("Yearly income: "))
-                .push(Text::new(format!("{:?}", self.yearly_income))))
-            .push(Row::new()
-                .push(Text::new("Deductions: "))
-                .push(Text::new(format!("{:?}", self.deductions))))
-            .push(Row::new()
-                .push(Text::new("Bonus: "))
-                .push(Text::new(format!("{:?}", self.bonus))))
-            .push(Row::new()
-                .push(Text::new("EMPLOYEE W2: "))
-                .push(Text::new(format!("{:?}", self.report))))
-            .push(Button::new(&mut self.logout_button, Text::new("Back To Employee Year"))
-                        .on_press(Message::W2Message(W2Message::Back)))
+            .push(
+                Row::new()
+                    .push(Text::new("Employee Name:"))
+                    .push(Text::new(&*self.first_name)),
+            )
+            .push(
+                Row::new()
+                    .push(Text::new("SSN: "))
+                    .push(Text::new(&*self.ssn)),
+            )
+            .push(
+                Row::new()
+                    .push(Text::new("Yearly income: "))
+                    .push(Text::new(format!("{:?}", self.yearly_income))),
+            )
+            .push(
+                Row::new()
+                    .push(Text::new("Deductions: "))
+                    .push(Text::new(format!("{:?}", self.deductions))),
+            )
+            .push(
+                Row::new()
+                    .push(Text::new("Bonus: "))
+                    .push(Text::new(format!("{:?}", self.bonus))),
+            )
+            .push(
+                Row::new()
+                    .push(Text::new("EMPLOYEE W2: "))
+                    .push(Text::new(format!("{:?}", self.report))),
+            )
+            .push(
+                Button::new(&mut self.logout_button, Text::new("Back To Employee Year"))
+                    .on_press(Message::W2Message(W2Message::Back)),
+            )
             .into()
     }
 }
