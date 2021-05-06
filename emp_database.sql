@@ -149,11 +149,11 @@ returns REAL as $$
 end;
 $$ language plpgsql;
 /* set social security contribution */
-create function socialSec(employee_ID int)
+create function socialSec(employee_ID int, year int)
 returns REAL as $$
     declare ssn_val numeric (10,2);
     begin
-        select amount into ssn_val from socialSecurity where employee_ID = E_ID;
+        select amount into ssn_val from socialSecurity where employee_ID = E_ID AND e_year = year;
         return ssn_val;
     end;
 $$ language plpgsql;
@@ -163,7 +163,7 @@ create function tax_reductions(employee_ID int, yr int)
 returns REAL as $$
     declare tax_red_val REAL;
     begin
-        tax_red_val := stateTax(employee_ID, yr) + bracket(employee_ID, yr) + socialSec(employee_ID) ;
+        tax_red_val := stateTax(employee_ID, yr) + bracket(employee_ID, yr) + socialSec(employee_ID, yr) ;
         return tax_red_val;
     end;
 $$ language plpgsql;
@@ -181,13 +181,16 @@ returns REAL as $$
 $$ language plpgsql;
 
 /*employee_contribution to medicare*/
-create function medicare(employee_ID int)
+create function medicare(employee_ID int, year int)
     returns REAL as $$
     declare contribution REAL;
     declare benefit_type varchar(20);
     begin
         select benefitType into benefit_type from benefits where E_ID=employee_ID;
-        select employeeContribution into contribution from benefits where benefit_type='medicare' and employee_ID=E_ID;
+        select employeeContribution into contribution from benefits where benefit_type='medicare' and employee_ID=E_ID and e_year = year;
+        if contribution is null then
+            return 0.0;
+        end if;
         return contribution;
     end
 $$ language plpgsql;
