@@ -6,7 +6,10 @@ use log::warn;
 
 #[derive(Debug,Clone)]
 pub enum PaycheckMessage {
-    paycheck_report(i32, i32),
+    Load{
+        year: i32,
+        e_id: i32
+    },
     Back
 }
 fn make_wrapper(variant: impl Fn(String) -> PaycheckMessage) -> impl Fn(String) -> Message{
@@ -38,29 +41,29 @@ impl PaycheckState {
 
     pub(crate) fn update(&mut self, msg: PaycheckMessage, client: &mut Client, user: &User) -> Option<Message> {
         match msg {
-            PaycheckMessage::paycheck_report(e_id, report_year) => {
-                let employee =client.query_one("SELECT * FROM employee WHERE E_ID = $1", &[&e_id])
+            PaycheckMessage::Load{e_id, year} => {
+                let employee = client.query_one("SELECT * FROM employee WHERE E_ID = $1", &[&e_id])
                     .expect("Can't find employee!");
-                let statetax = client.query_one("SELECT stateTax($1, $2)", &[&e_id, &report_year]);
-                let brackettax = client.query_one("SELECT bracket($1, $2)", &[&e_id, &report_year]);
+                let statetax = client.query_one("SELECT stateTax($1, $2)", &[&e_id, &year]);
+                let brackettax = client.query_one("SELECT bracket($1, $2)", &[&e_id, &year]);
                 let four_one_k = client.query_one("SELECT Val401k($1)", &[&e_id]);
-                let social_sec = client.query_one("SELECT socialSec($1, $2)", &[&e_id, &report_year]);
-                let insurance = client.query_one("SELECT insurance_premium($1, $2)", &[&e_id, &report_year]);
-                let medicare = client.query_one("SELECT medicare($1, $2)", &[&e_id, &report_year]);
-                let paycheck = client.query_one("SELECT paycheck($1, $2)", &[&e_id, &report_year]);
+                let social_sec = client.query_one("SELECT socialSec($1, $2)", &[&e_id, &year]);
+                let insurance = client.query_one("SELECT insurance_premium($1, $2)", &[&e_id, &year]);
+                let medicare = client.query_one("SELECT medicare($1, $2)", &[&e_id, &year]);
+                let paycheck = client.query_one("SELECT paycheck($1, $2)", &[&e_id, &year]);
                 self.e_id = employee.get("E_ID");
                 self.ssn = employee.get("SSN");
                 self.first_name = employee.get("firstName");
                 self.last_name = employee.get("lastName");
                 self.state_address = employee.get( "stateAddress");
-                self.report_year = report_year;
-                self.state_tax = statetax.unwrap().get("tax_val");
-                self.four_one_k = four_one_k.unwrap().get("contribution");
-                self.bracket_tax = brackettax.unwrap().get("bracket_val");
-                self.social_sec = social_sec.unwrap().get("ssn_val");
-                self.insurance_premium = insurance.unwrap().get("premiumcost");
-                self.medicare = medicare.unwrap().get("contribution");
-                self.report = paycheck.unwrap().get("paycheck_amount");
+                self.report_year = year;
+                self.state_tax = statetax.unwrap().get("stateTax");
+                self.four_one_k = four_one_k.unwrap().get("Val401k");
+                self.bracket_tax = brackettax.unwrap().get("bracket");
+                self.social_sec = social_sec.unwrap().get("socialSec");
+                self.insurance_premium = insurance.unwrap().get("insurance_premium");
+                self.medicare = medicare.unwrap().get("medicare");
+                self.report = paycheck.unwrap().get("paycheck");
 
                 return Some(Message::SelectPage(Page::Paycheck));
             }

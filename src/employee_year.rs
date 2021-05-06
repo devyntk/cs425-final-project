@@ -18,6 +18,8 @@ pub enum EmployeeYearMessage {
     UpdateSalary(String),
     Save,
     Back,
+    ViewW2,
+    ViewPaycheck,
 
     UpdateSSAmount(String),
     UpdateSSEmployeePays(String),
@@ -139,6 +141,8 @@ pub struct EmployeeYearState {
     performance_pick_state: pick_list::State<Performance>,
     save_state: button::State,
     back_state: button::State,
+    w2_state: button::State,
+    paycheck_state: button::State,
 
     // social security state
     amount_state: text_input::State,
@@ -326,6 +330,7 @@ impl EmployeeYearState {
                 }
             }
             EmployeeYearMessage::UpdateSSAmount(str) => {
+                if !user.is_manager() {return None}
                 match &self.social_security {
                     Some(mut ss) => {
                         self.social_security = Some(SocialSecurity{
@@ -359,6 +364,7 @@ impl EmployeeYearState {
                 }
             }
             EmployeeYearMessage::CreateSS => {
+                if !user.is_manager() {return None}
                 self.social_security = Some(SocialSecurity{
                     amount: 0.0,
                     employee_pays: 0.0,
@@ -366,6 +372,7 @@ impl EmployeeYearState {
                 })
             }
             EmployeeYearMessage::UpdateBenefitType(str) => {
+                if !user.is_manager() {return None}
                 match &self.benefits {
                     Some(benefits) => {
                         self.benefits = Some(Benefits{
@@ -399,6 +406,7 @@ impl EmployeeYearState {
                 }
             }
             EmployeeYearMessage::CreateBenefit => {
+                if !user.is_manager() {return None}
                 self.benefits = Some(Benefits{
                     benefit_type: "Insert Here".parse().unwrap(),
                     employee_contribution: 0.0,
@@ -406,6 +414,7 @@ impl EmployeeYearState {
                 })
             }
             EmployeeYearMessage::UpdateBonusPercentage(str) => {
+                if !user.is_manager() {return None}
                 match &self.bonus {
                     Some(bonus) => {
                         self.bonus = Some(Bonus {
@@ -416,6 +425,7 @@ impl EmployeeYearState {
                 }
             }
             EmployeeYearMessage::UpdateBonusSale(str) => {
+                if !user.is_manager() {return None}
                 match &self.bonus {
                     Some(bonus) => {
                         self.bonus = Some(Bonus {
@@ -426,12 +436,14 @@ impl EmployeeYearState {
                 }
             }
             EmployeeYearMessage::CreateBonus => {
+                if !user.is_manager() {return None}
                 self.bonus = Some(Bonus{
                     percentage: 0.0,
                     company_sale: 0.0
                 })
             }            
             EmployeeYearMessage::UpdateInsuranceType(str) => {
+                if !user.is_manager() {return None}
                 match &self.insurance {
                     Some(insurance) => {
                         self.insurance = Some(InsurancePlan {
@@ -454,6 +466,7 @@ impl EmployeeYearState {
                 }
             }
             EmployeeYearMessage::UpdateInsurancePremium(str) => {
+                if !user.is_manager() {return None}
                 match &self.insurance {
                     Some(insurance) => {
                         self.insurance = Some(InsurancePlan {
@@ -471,7 +484,13 @@ impl EmployeeYearState {
                     employer_contribution: 0.0
                 })
             }
-            _ => {}
+            EmployeeYearMessage::ViewPaycheck => {
+                return Some(Message::PaycheckMessage(crate::paycheck::PaycheckMessage::Load { year: self.e_year, e_id: self.e_id }))
+            }
+            EmployeeYearMessage::ViewW2 => {
+                return Some(Message::W2Message(crate::w2::W2Message::W2Report{ year: self.e_year, e_id: self.e_id }))
+
+            }
         }
         None
     }
@@ -607,7 +626,13 @@ impl EmployeeYearState {
                         }
                     }
                 ))
-            .push(Row::new().push(Button::new(&mut self.back_state, Text::new("Back to Employee"))
+            .push(
+                    Row::new()
+                        .push(Button::new(&mut self.w2_state, Text::new("View W2"))
+                            .on_press(Message::EmployeeYearMessage(EmployeeYearMessage::ViewW2)))
+                        .push(Button::new(&mut self.paycheck_state, Text::new("View Paycheck"))
+                            .on_press(Message::EmployeeYearMessage(EmployeeYearMessage::ViewPaycheck)))
+            ).push(Row::new().push(Button::new(&mut self.back_state, Text::new("Back to Employee"))
                     .on_press(Message::EmployeeYearMessage(EmployeeYearMessage::Back)))
                 .push(Button::new(&mut self.save_state, Text::new("Update Employee"))
                     .on_press(Message::EmployeeYearMessage(EmployeeYearMessage::Save))))

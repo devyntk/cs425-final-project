@@ -65,7 +65,7 @@ impl MenuState {
                     ))
                     .push(Button::new(&mut self.expense_state,
                         Text::new("View Report"))
-                        .on_press(Message::EmployeeExpenseMessage(EmployeeExpenseMessage::company_employee_expense(self.expense_year))))
+                        .on_press(Message::EmployeeExpenseMessage(EmployeeExpenseMessage::Load(self.expense_year))))
             )
             .into()
     }

@@ -33,7 +33,7 @@ struct EmployeeListEntry{
 impl EmployeeListEntry {
     fn view(&mut self) -> Row<Message> {
         Row::new().push(Text::new(format!("{} {} ({})", self.first_name, self.last_name, self.e_id)))
-            .push(Button::new(&mut self.edit_state, Text::new("Edit"))
+            .push(Button::new(&mut self.edit_state, Text::new("Edit/View"))
                 .on_press(Message::EmployeeListMessage(EmployeeListMessage::Edit(self.e_id))))
     }
 }

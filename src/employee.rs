@@ -217,25 +217,25 @@ impl EmployeeState {
                         benefits_state: text_input::State::default(),
                         delete_state: button::State::default()
                     });
-                    let user = client.query_opt("SELECT * FROM user_tbl WHERE e_id = $1;",
-                                                &[&self.e_id]).expect("Error getting user");
-                    match user {
-                        None => {
-                            self.user_emp = None;
-                        } Some(user_row) => {
-                            self.user_emp = Some(UserEmp{
-                                username: user_row.get("username"),
-                                password: user_row.get("psswrd"),
-                                user_type: user_row.get("user_type"),
-                                username_state: Default::default(),
-                                password_state: Default::default()
-                            })
-                        }
-                    }
-
-                    self.num_deps += 1;
-
                 };
+
+                let user = client.query_opt("SELECT * FROM user_tbl WHERE e_id = $1;",
+                                            &[&self.e_id]).expect("Error getting user");
+                match user {
+                    None => {
+                        self.user_emp = None;
+                    } Some(user_row) => {
+                        self.user_emp = Some(UserEmp{
+                            username: user_row.get("username"),
+                            password: user_row.get("psswrd"),
+                            user_type: user_row.get("user_type"),
+                            username_state: Default::default(),
+                            password_state: Default::default()
+                        })
+                    }
+                }
+
+                self.num_deps += 1;
                 return Some(Message::SelectPage(Page::ViewEmployee))
             }
             EmployeeMessage::CreateEmployee => {

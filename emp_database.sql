@@ -99,7 +99,7 @@ returns numeric (9,0) as $$
 end;
 $$ language plpgsql;
 /*find salary by employee id and year*/
-create function find_salary(employee_ID int, yr DATE)
+create function find_salary(employee_ID int, yr int)
 returns numeric (10,2) as $$
     declare salary_val numeric (10,2);
     begin
@@ -109,7 +109,7 @@ end;
 $$ language plpgsql;
 
 /*find tax rate using employee id and year to find state tax rate */
-create function findTaxRate(employee_ID int, yr DATE)
+create function findTaxRate(employee_ID int, yr int)
 returns decimal as $$
     declare rate decimal;
     declare name_of_state varchar(20);
@@ -121,7 +121,7 @@ end;
 $$ language plpgsql;
 
 /*find bracket using year*/
-create function findBracket(yr DATE)
+create function findBracket(yr int)
 returns decimal as $$
     declare b_rate decimal;
     begin
@@ -131,24 +131,26 @@ end;
 $$ language plpgsql;
 
 /* set tax value */
-create function stateTax(employee_ID int, yr DATE)
-returns numeric(10,2) as $$
+create function stateTax(employee_ID int, yr int)
+returns REAL as $$
     declare tax_val numeric (10,2);
     begin
         tax_val := findTaxrate(employee_ID, yr) * find_salary(employee_ID, yr);
-    end;
+    return tax_val;
+end;
 $$ language plpgsql;
 /* set bracket value */
-create function bracket(employee_ID int, yr DATE)
-returns numeric(10,2) as $$
+create function bracket(employee_ID int, yr int)
+returns REAL as $$
     declare bracket_val numeric (10,2);
     begin
 	    bracket_val := findBracket(yr) * find_salary(employee_ID, yr);
-    end;
+	return bracket_val;
+end;
 $$ language plpgsql;
 /* set social security contribution */
 create function socialSec(employee_ID int)
-returns numeric(10,2) as $$
+returns REAL as $$
     declare ssn_val numeric (10,2);
     begin
         select amount into ssn_val from socialSecurity where employee_ID = E_ID;
@@ -157,9 +159,9 @@ returns numeric(10,2) as $$
 $$ language plpgsql;
 
 /* calculate tax reductions for weekly paycheck report*/
-create function tax_reductions(employee_ID int, yr DATE)
-returns numeric(10,2) as $$
-    declare tax_red_val numeric(10,2);
+create function tax_reductions(employee_ID int, yr int)
+returns REAL as $$
+    declare tax_red_val REAL;
     begin
         tax_red_val := stateTax(employee_ID, yr) + bracket(employee_ID, yr) + socialSec(employee_ID) ;
         return tax_red_val;
@@ -168,8 +170,8 @@ $$ language plpgsql;
 
 /*employee_contribution to 401k*/
 create function Val401k(employee_ID int)
-returns numeric(10,2) as $$
-    declare contribution numeric(10,2);
+returns REAL as $$
+    declare contribution REAL;
     declare benefit_type varchar(20);
     begin
         select benefitType into benefit_type from benefits where E_ID=employee_ID;
@@ -180,8 +182,8 @@ $$ language plpgsql;
 
 /*employee_contribution to medicare*/
 create function medicare(employee_ID int)
-    returns numeric(10,2) as $$
-    declare contribution numeric(10,2);
+    returns REAL as $$
+    declare contribution REAL;
     declare benefit_type varchar(20);
     begin
         select benefitType into benefit_type from benefits where E_ID=employee_ID;
@@ -191,9 +193,9 @@ create function medicare(employee_ID int)
 $$ language plpgsql;
 
 /*find insurance premium cost using employee_ID and specific year*/
-create function insurance_premium(employee_ID int, yr DATE)
-returns numeric(10,2) as $$
-    declare premiumcost numeric(10,2);
+create function insurance_premium(employee_ID int, yr int)
+returns REAL as $$
+    declare premiumcost REAL;
 begin
 	select premium into premiumcost from insurancePlan where employee_ID=E_ID and e_year=yr;
 	return premiumcost;
@@ -201,9 +203,9 @@ end;
 $$ language plpgsql;
 
 /*to generate paycheck*/
-create function paycheck(employee_ID int, yr DATE)
-    returns numeric(10,2) as $$
-    declare paycheck_amount numeric(10,2);
+create function paycheck(employee_ID int, yr int)
+    returns REAL as $$
+    declare paycheck_amount REAL;
 begin
 	paycheck_amount := find_salary(employee_ID, yr) - tax_reductions(employee_ID, yr) - Val401k(employee_ID) - insurance_premium(employee_ID, yr);
 	return paycheck_amount;
@@ -212,9 +214,9 @@ $$ language plpgsql;
 
 /*create w2 report requires: annual income, deductions and bonus */
 /*calculate yearly income of employee*/
-create function yearly_income(employee_ID int, yr Date)
-returns numeric(10,2) as $$
-    declare annual_income numeric(10,2);
+create function yearly_income(employee_ID int, yr int)
+returns REAL as $$
+    declare annual_income REAL;
     begin
 		annual_income := (find_salary(employee_ID, yr))*24;
 		/* salary is biweekly, so income for a year includes 12 * 2 salaries */
@@ -223,9 +225,9 @@ returns numeric(10,2) as $$
 $$ language plpgsql;
 
 /*create table of all the deductions */
-create function deductions(employee_ID int, yr DATE)
-    returns numeric(10,2) as $$
-    declare total numeric(10,2);
+create function deductions(employee_ID int, yr int)
+    returns REAL as $$
+    declare total REAL;
 begin 
 	total:= tax_reductions(employee_ID, yr) + Val401k(employee_ID) + insurance_premium(employee_ID, yr) as total;
 	return total;
@@ -233,14 +235,14 @@ end;
 $$ language plpgsql;
 
 /*calculates bonus rate depending on performance*/
-create function percentage_bonus(perf_type varchar(20))
+create function percentage_bonus(perf_type perfomance)
 returns decimal as $$
     begin
-	if perf_type == 'well' then
+	if perf_type = 'well' then
 		return 1.0;
-	else if perf_type == 'okay' then
+	else if perf_type = 'ok' then
 		return 0.5;
-	else if perf_type == 'super_performer' or perf_type == 'manager' then 
+	else if perf_type = 'super_performer' or perf_type = 'manager' then
 		return 1.5;
 	else
 		return 0.5;
@@ -250,27 +252,27 @@ returns decimal as $$
 	end;
 $$ language plpgsql;
 /*calculates bonus depending on employee id, bonus rate, and year*/
-create function bonus_earned(employee_ID int, yr DATE)
-returns numeric(10,2) as $$
-    declare s_type varchar(20);
-    declare bonus numeric(10,2);
-    declare perf varchar(20);
+create function bonus_earned(employee_ID int, yr int)
+    returns REAL as $$
+declare bonus REAL;
+    declare perf perfomance;
+    declare s_type salary;
 begin
     select performance into perf from employeeYear where E_ID=employee_ID and yr=e_year;
     select salaryType into s_type from employeeYear where E_ID=employee_ID and e_year=yr;
-        if s_type == 'W2' then
-            bonus = yearly_income(employee_ID, yr) * percentage_bonus(perf);
-        else
-            bonus = 0;
-        end if;
+    if s_type = 'w2'::salary then
+        bonus := yearly_income(employee_ID, yr) * percentage_bonus(perf);
+    else
+        bonus := 0;
+    end if;
     return bonus;
 end;
 $$ language plpgsql;
 
 /*w2 report data*/
-create function w2_report(employee_ID int, yr DATE)
-    returns numeric(10,2) as $$
-    declare total numeric(10,2);
+create function w2_report(employee_ID int, yr int)
+    returns REAL as $$
+    declare total REAL;
     begin
         total:= yearly_income(employee_ID, yr) + deductions(employee_ID, yr)- bonus_earned(employee_ID, yr);
         return total;
@@ -278,35 +280,35 @@ create function w2_report(employee_ID int, yr DATE)
 $$ language plpgsql;
 
 /*company employee expense report:wages, bonus paid, 401k employer contribution, ssn contribution, insurance contribution*/
-create function find_wages(yr DATE)
+create function find_wages(yr int)
     returns SETOF integer AS $BODY$
     begin
         return query select E_ID, salary from employeeYear where e_year=yr;
     end
 $BODY$ language plpgsql;
 
-create function bonus_paid(yr DATE)
+create function bonus_paid(yr int)
     returns SETOF integer AS $BODY$
     begin
         return query select E_ID, salary, performance from employeeYear where e_year=yr;
     end
 $BODY$ language plpgsql;
 
-create function retirement_employer(yr DATE)
+create function retirement_employer(yr int)
 returns SETOF integer AS $BODY$
     begin
         return query select E_ID, employerContribution as amount from benefits where e_year=yr and benefitType='401k';
     end
 $BODY$ language plpgsql;
 
-create function ssn_employer(yr DATE)
+create function ssn_employer(yr int)
     returns SETOF integer AS $BODY$
     begin
         return query select E_ID, employerPays as amount from socialSecurity where e_year=yr;
     end
 $BODY$ language plpgsql;
 
-create function insurance_employer(yr DATE)
+create function insurance_employer(yr int)
     returns SETOF integer AS $BODY$
     begin
         return query select E_ID, employerContribution as amount from insurancePlan where e_year=yr;

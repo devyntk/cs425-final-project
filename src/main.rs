@@ -67,6 +67,18 @@ struct User {
     username: String,
     e_id: i32
 }
+impl User {
+    fn is_manager(&self) -> bool {
+        match self.usertype {
+            UserType::Manager|UserType::Administrator => {
+                true
+            }
+            _ => {
+                false
+            }
+        }
+    }
+}
 
 #[derive(Debug, PartialEq, Clone, ToSql, FromSql)]
 #[postgres(name="usertype")]
