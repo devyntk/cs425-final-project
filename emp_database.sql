@@ -225,8 +225,10 @@ $$ language plpgsql;
 /*create table of all the deductions */
 create function deductions(employee_ID int, yr DATE)
     returns numeric(10,2) as $$
+    declare total numeric(10,2);
 begin 
-	return tax_reductions(employee_ID, yr) + Val401k(employee_ID) + insurance_premium(employee_ID, yr);
+	total:= tax_reductions(employee_ID, yr) + Val401k(employee_ID) + insurance_premium(employee_ID, yr) as total;
+	return total;
 end;
 $$ language plpgsql;
 
@@ -268,8 +270,10 @@ $$ language plpgsql;
 /*w2 report data*/
 create function w2_report(employee_ID int, yr DATE)
     returns numeric(10,2) as $$
+    declare total numeric(10,2);
     begin
-        return yearly_income(employee_ID, yr) + deductions(employee_ID, yr)- bonus_earned(employee_ID, yr);
+        total:= yearly_income(employee_ID, yr) + deductions(employee_ID, yr)- bonus_earned(employee_ID, yr);
+        return total;
     end
 $$ language plpgsql;
 
