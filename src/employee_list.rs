@@ -16,7 +16,6 @@ fn make_wrapper(variant: impl Fn(String) -> EmployeeListMessage) -> impl Fn(Stri
     move |s| Message::EmployeeListMessage(variant(s))
 }
 
-
 #[derive(Debug, Clone, Default)]
 pub struct EmployeeListState {
     entries: HashMap<i32, EmployeeListEntry>,

@@ -1,4 +1,4 @@
-use crate::{Message, User, UserType};
+use crate::{Message, User, UserType, Page};
 use postgres::Client;
 use iced::{Column, Element, Text, Button, Row, TextInput, text_input};
 use iced::button;
@@ -151,9 +151,11 @@ impl EmployeeState {
         match msg {
             EmployeeMessage::ChangeFirstName(str) => {
                 self.first_name = str;
+                self.first_name.truncate(20);
             }
             EmployeeMessage::ChangeLastName(str) => {
                 self.last_name = str;
+                self.last_name.truncate(20);
             }
             EmployeeMessage::ChangeEID(_str) => {
                 warn!("You should not be modifying the E_ID!")
@@ -163,6 +165,7 @@ impl EmployeeState {
             }
             EmployeeMessage::ChangeSSN(str) => {
                 self.ssn = str;
+                self.ssn.truncate(9);
             }
             EmployeeMessage::ChangeJobTitle(str) => {
                 match user.usertype {
@@ -174,6 +177,7 @@ impl EmployeeState {
             }
             EmployeeMessage::ChangeAddress(str) => {
                 self.state_address = str;
+                self.state_address.truncate(2);
             }
             EmployeeMessage::LoadEmployee(e_id) => {
                 let employee = client.query_one("SELECT * FROM employee WHERE E_ID = $1;", &[&e_id])
@@ -232,11 +236,18 @@ impl EmployeeState {
                     self.num_deps += 1;
 
                 };
+                return Some(Message::SelectPage(Page::ViewEmployee))
+            }
+            EmployeeMessage::CreateEmployee => {
+                let e = client.query_one("INSERT INTO employee (SSN, firstName, lastName, jobTitle, stateAddress) VALUES ('000000000', 'first', 'last', 'job', 'NA') RETURNING e_id", &[]);
+                return self.update(EmployeeMessage::LoadEmployee(e.unwrap().get("e_id")), client, user)
             }
             EmployeeMessage::SaveChanges => {
                 client.execute("UPDATE employee SET SSN=$1, firstName=$2, lastName=$3, jobTitle=$4, stateAddress=$5\
                 WHERE E_ID = $6;",
-                &[&self.ssn, &self.first_name, &self.last_name, &self.job_title, &self.state_address, &self.e_id])
+                &[&self.ssn, &self.first_name,
+                    &self.last_name, &self.job_title,
+                    &self.state_address, &self.e_id])
                     .expect("Unable to update employee");
 
                 for dep in self.dependents.values() {
@@ -453,7 +464,7 @@ impl EmployeeState {
                 }
                 _ => {
                     Button::new(&mut self.logout_button, Text::new("Back to Menu"))
-                        .on_press(Message::SelectPage(crate::Page::Main))
+                        .on_press(Message::EmployeeListMessage(crate::employee_list::EmployeeListMessage::Load))
 
                 }
             });

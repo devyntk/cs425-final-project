@@ -1,5 +1,5 @@
 create table employee(
-	E_ID INT,
+	E_ID SERIAL,
 	SSN VARCHAR(9) not null unique,
 	firstName VARCHAR (20) not null,
 	lastName VARCHAR (20) not null,
