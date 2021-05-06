@@ -1,4 +1,4 @@
-use crate::{Message, User, UserType};
+use crate::{Message, User, UserType, Page};
 use postgres::Client;
 use iced::{Column, Element, Text, Button, Row, TextInput, text_input};
 use iced::button;
@@ -6,7 +6,8 @@ use log::warn;
 
 #[derive(Debug,Clone)]
 pub enum W2Message {
-    W2_report(i32, i32)
+    W2_report(i32, i32),
+    Back
 }
 fn make_wrapper(variant: impl Fn(String) -> W2Message) -> impl Fn(String) -> Message{
     move |s| Message::W2Message(variant(s))
@@ -51,6 +52,11 @@ impl W2State {
                 self.deductions = deductions.unwrap().get("total");
                 self.bonus = bonus.unwrap().get("bonus");
                 self.report = report.unwrap().get("total");
+
+                return Some(Message::SelectPage(Page::W2));
+            }
+            W2Message::Back => {
+                return Some(Message::SelectPage(Page::Main))
             }
         }
         None

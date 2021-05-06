@@ -295,21 +295,21 @@ $BODY$ language plpgsql;
 create function retirement_employer(yr DATE)
 returns SETOF integer AS $BODY$
     begin
-        return query select E_ID, employerContribution from benefits where e_year=yr and benefitType='401k';
+        return query select E_ID, employerContribution as amount from benefits where e_year=yr and benefitType='401k';
     end
 $BODY$ language plpgsql;
 
 create function ssn_employer(yr DATE)
     returns SETOF integer AS $BODY$
     begin
-        return query select E_ID, employerPays from socialSecurity where e_year=yr;
+        return query select E_ID, employerPays as amount from socialSecurity where e_year=yr;
     end
 $BODY$ language plpgsql;
 
 create function insurance_employer(yr DATE)
     returns SETOF integer AS $BODY$
     begin
-        return query select E_ID, employerContribution from insurancePlan where e_year=yr;
+        return query select E_ID, employerContribution as amount from insurancePlan where e_year=yr;
     end
 $BODY$ language plpgsql;
 

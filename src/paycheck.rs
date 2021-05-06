@@ -1,4 +1,4 @@
-use crate::{Message, User, UserType};
+use crate::{Message, User, UserType, Page};
 use postgres::Client;
 use iced::{Column, Element, Text, Button, Row, TextInput, text_input};
 use iced::button;
@@ -6,7 +6,8 @@ use log::warn;
 
 #[derive(Debug,Clone)]
 pub enum PaycheckMessage {
-    paycheck_report(i32, i32)
+    paycheck_report(i32, i32),
+    Back
 }
 fn make_wrapper(variant: impl Fn(String) -> PaycheckMessage) -> impl Fn(String) -> Message{
     move |s| Message::PaycheckMessage(variant(s))
@@ -61,12 +62,10 @@ impl PaycheckState {
                 self.medicare = medicare.unwrap().get("contribution");
                 self.report = paycheck.unwrap().get("paycheck_amount");
 
-                /*println!("Employee Name: {} {}", self.first_name, self.last_name);
-                println!("ssn: {} ", self.ssn);
-                println!("Tax Deductions: {:?} [state tax], {:?} [federal tax], {:?} [social security] {:?} [medicare]", statetax, brackettax, social_sec, medicare);
-                println!("401k contribution: {:?}", four_one_k);
-                println!("insurance premium: {:?}", insurance);
-                println!("EMPLOYEE PAYCHECK: {:?}", paycheck);*/
+                return Some(Message::SelectPage(Page::Paycheck));
+            }
+            PaycheckMessage::Back => {
+                return Some(Message::SelectPage(Page::Main))
             }
         }
         None
