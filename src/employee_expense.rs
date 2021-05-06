@@ -1,7 +1,7 @@
-use crate::{Message, Page, User, UserType};
+use crate::{Message, Page, User};
 use iced::button;
 use iced::{text_input, Button, Column, Element, Row, Text, TextInput};
-use log::warn;
+
 use postgres::Client;
 use std::collections::HashMap;
 
@@ -56,7 +56,7 @@ impl EmployeeExpenseState {
         &mut self,
         msg: EmployeeExpenseMessage,
         client: &mut Client,
-        user: &User,
+        _user: &User,
     ) -> Option<Message> {
         match msg {
             EmployeeExpenseMessage::Load(year) => {
@@ -68,7 +68,7 @@ impl EmployeeExpenseState {
                     let retirement = client.query_one("SELECT retirement_employer($1)", &[&e_id]);
                     let ssn_contribution = client.query_one("SELECT ssn_employer($1)", &[&e_id]);
                     let insurance = client.query_one("SELECT insurance_employer($1, $2)", &[&e_id]);
-                    let expenses = client.query_one("SELECT find_wages($1) inner join", &[&e_id]);
+                    let _expenses = client.query_one("SELECT find_wages($1) inner join", &[&e_id]);
                     self.entries.insert(
                         e_id,
                         EmployeeExpenseEntry {
@@ -88,13 +88,13 @@ impl EmployeeExpenseState {
         None
     }
 
-    pub(crate) fn view(&mut self, user: &User) -> Element<Message> {
+    pub(crate) fn view(&mut self, _user: &User) -> Element<Message> {
         Column::new()
             .push(Text::new("Expense by year"))
             .push(
                 self.entries
                     .iter_mut()
-                    .fold(Column::new(), |parent: Column<Message>, (year, entry)| {
+                    .fold(Column::new(), |parent: Column<Message>, (_year, entry)| {
                         parent.push(entry.view())
                     }),
             )

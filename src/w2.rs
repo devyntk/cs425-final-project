@@ -1,7 +1,7 @@
-use crate::{Message, Page, User, UserType};
+use crate::{Message, Page, User};
 use iced::button;
 use iced::{text_input, Button, Column, Element, Row, Text, TextInput};
-use log::warn;
+
 use postgres::Client;
 
 #[derive(Debug, Clone)]
@@ -37,7 +37,7 @@ impl W2State {
         &mut self,
         msg: W2Message,
         client: &mut Client,
-        user: &User,
+        _user: &User,
     ) -> Option<Message> {
         match msg {
             W2Message::W2Report { e_id, year } => {
@@ -65,7 +65,7 @@ impl W2State {
         None
     }
 
-    pub(crate) fn view(&mut self, user: &User) -> Element<Message> {
+    pub(crate) fn view(&mut self, _user: &User) -> Element<Message> {
         Column::new()
             .push(
                 Row::new()

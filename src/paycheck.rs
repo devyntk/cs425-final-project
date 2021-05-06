@@ -1,7 +1,7 @@
 use crate::{Message, Page, User, UserType};
 use iced::button;
 use iced::{text_input, Button, Column, Element, Row, Text, TextInput};
-use log::warn;
+
 use postgres::Client;
 
 #[derive(Debug, Clone)]
@@ -39,7 +39,7 @@ impl PaycheckState {
         &mut self,
         msg: PaycheckMessage,
         client: &mut Client,
-        user: &User,
+        _user: &User,
     ) -> Option<Message> {
         match msg {
             PaycheckMessage::Load { e_id, year } => {
@@ -70,7 +70,7 @@ impl PaycheckState {
 
                 return Some(Message::SelectPage(Page::Paycheck));
             }
-            PaycheckMessage::Back => return Some(Message::SelectPage(Page::Main)),
+            PaycheckMessage::Back => return Some(Message::SelectPage(Page::ViewEmployeeYear)),
         }
         None
     }
@@ -113,12 +113,10 @@ impl PaycheckState {
                     .push(Text::new("EMPLOYEE PAYCHECK: "))
                     .push(Text::new(format!("{:?}", self.report))),
             )
-            .push(match user.usertype {
-                UserType::Manager => Button::new(&mut self.logout_button, Text::new("Log Out"))
-                    .on_press(Message::LogOut),
-                _ => Button::new(&mut self.logout_button, Text::new("Back to Menu"))
-                    .on_press(Message::SelectPage(crate::Page::Main)),
-            })
+            .push(
+                Button::new(&mut self.logout_button, Text::new("Back To Employee Year"))
+                    .on_press(Message::PaycheckMessage(PaycheckMessage::Back)),
+            )
             .into()
     }
 }

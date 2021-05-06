@@ -1,7 +1,7 @@
-use crate::{Message, Page, User, UserType};
+use crate::{Message, Page, User};
 use iced::button;
 use iced::{text_input, Button, Column, Element, Row, Text, TextInput};
-use log::warn;
+
 use postgres::Client;
 use std::collections::HashMap;
 
@@ -54,7 +54,7 @@ impl EmployeeListState {
         &mut self,
         msg: EmployeeListMessage,
         client: &mut Client,
-        user: &User,
+        _user: &User,
     ) -> Option<Message> {
         match msg {
             EmployeeListMessage::Load => {
@@ -93,7 +93,7 @@ impl EmployeeListState {
             .push(
                 self.entries
                     .iter_mut()
-                    .fold(Column::new(), |parent: Column<Message>, (d_id, entry)| {
+                    .fold(Column::new(), |parent: Column<Message>, (_d_id, entry)| {
                         parent.push(entry.view())
                     }),
             )

@@ -7,8 +7,8 @@ mod menu;
 mod paycheck;
 mod w2;
 
-use crate::menu::MenuMessage;
-use crate::Message::EmployeeMessage;
+
+
 use iced::{Column, Element, Sandbox, Settings, Text};
 use log::info;
 use postgres::{Client, NoTls};

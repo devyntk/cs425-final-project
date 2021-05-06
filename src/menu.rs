@@ -30,7 +30,7 @@ impl MenuState {
     }
 
     pub(crate) fn update(&mut self, msg: MenuMessage, _client: &mut Client) -> Option<Message> {
-        return match msg {
+        match msg {
             MenuMessage::LogOut => Some(Message::LogOut),
             MenuMessage::EmployeeList => Some(Message::EmployeeListMessage(
                 crate::employee_list::EmployeeListMessage::Load,
@@ -40,7 +40,7 @@ impl MenuState {
                 None
             }
             _ => None,
-        };
+        }
     }
 
     pub(crate) fn view(&mut self, user: &User) -> Element<Message> {

@@ -1,10 +1,10 @@
 use crate::{Message, User, UserType};
 use iced::button;
 use iced::{pick_list, text_input, Button, Column, Element, Row, Text, TextInput};
-use log::{info, warn};
+use log::{info};
 use postgres::Client;
 use postgres_types::{FromSql, ToSql};
-use std::error::Error;
+
 
 #[derive(Debug, Clone)]
 pub enum EmployeeYearMessage {
@@ -377,7 +377,7 @@ impl EmployeeYearState {
                     return None;
                 }
                 match &self.social_security {
-                    Some(mut ss) => {
+                    Some(ss) => {
                         self.social_security = Some(SocialSecurity {
                             amount: str.parse().unwrap_or(ss.amount),
                             employee_pays: ss.employee_pays,
@@ -390,7 +390,7 @@ impl EmployeeYearState {
                 }
             }
             EmployeeYearMessage::UpdateSSEmployeePays(str) => match &self.social_security {
-                Some(mut ss) => {
+                Some(ss) => {
                     self.social_security = Some(SocialSecurity {
                         amount: ss.amount,
                         employee_pays: str.parse().unwrap_or(ss.employee_pays),
@@ -402,7 +402,7 @@ impl EmployeeYearState {
                 }
             },
             EmployeeYearMessage::UpdateSSEmployerPays(str) => match &self.social_security {
-                Some(mut ss) => {
+                Some(ss) => {
                     self.social_security = Some(SocialSecurity {
                         amount: ss.amount,
                         employee_pays: ss.employee_pays,
@@ -592,7 +592,7 @@ impl EmployeeYearState {
         None
     }
 
-    pub(crate) fn view(&mut self, user: &User) -> Element<Message> {
+    pub(crate) fn view(&mut self, _user: &User) -> Element<Message> {
         Column::new()
             .push(
                 Row::new()
