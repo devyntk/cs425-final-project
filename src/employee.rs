@@ -19,6 +19,8 @@ pub enum EmployeeMessage {
     LoadEmployee(i32),
     CreateEmployee,
     LoadYear(i32),
+    CreateYear,
+    ChangeYear(String),
     SaveChanges,
     ChangeDepID(i32, String),
     ChangeDepName(i32, String),
@@ -58,6 +60,11 @@ pub struct EmployeeState {
     logout_button: button::State,
     years: Vec<i32>,
     year_states: Vec<button::State>,
+
+    add_year_state: button::State,
+    year: i32,
+    year_state: text_input::State,
+
     dependents: HashMap<i32, Dependent>,
     num_deps: i32,
     add_dep_state: button::State,
@@ -398,6 +405,16 @@ impl EmployeeState {
                 }
                 Some(user) => user.password = str,
             },
+            EmployeeMessage::ChangeYear(str) => {
+                self.year = str.parse().unwrap_or(self.year);
+            }
+            EmployeeMessage::CreateYear => {
+                if user.usertype == UserType::Employee {return None}
+                client.execute("INSERT INTO employeeYear (e_id, e_year, salary, salaryType, performance)\
+                 VALUES ($1, $2, 0, 'hourly', 'ok')", &[&self.e_id, &self.year])
+                    .expect("Cannot create year");
+                return Some(Message::EmployeeMessage(EmployeeMessage::LoadEmployee(self.e_id)))
+            }
             _ => {}
         }
         None
@@ -471,6 +488,18 @@ impl EmployeeState {
                 }
                 false => Row::new().push(Text::new("No associated Years found.")),
             })
+            .push(
+                Row::new()
+                    .push(Text::new("Add new Year:"))
+                    .push(text_input::TextInput::new(
+                        &mut self.year_state,
+                        "2020",
+                        &*self.year.to_string(),
+                        make_wrapper(EmployeeMessage::ChangeYear)
+                    ))
+                    .push(Button::new(&mut self.add_year_state, Text::new("Add"))
+                        .on_press(Message::EmployeeMessage(EmployeeMessage::CreateYear)))
+            )
             .push(
                 Row::new().push(Text::new("Dependents:")).push(
                     self.dependents
