@@ -1,4 +1,4 @@
-use crate::{Message, User, UserType};
+use crate::{Message, User, UserType, Page};
 use postgres::Client;
 use iced::{Column, Element, Text, Button, Row, TextInput, text_input};
 use iced::button;
@@ -9,8 +9,6 @@ use std::collections::HashMap;
 pub enum EmployeeListMessage {
     Back,
     Edit(i32),
-    W2(i32),
-    Paycheck(i32),
     Load,
     AddEmployee
 }
@@ -31,13 +29,13 @@ struct EmployeeListEntry{
     first_name: String,
     last_name: String,
     e_id: i32,
-    edit_state: button::State,
-    w2_state: button::State,
-    paycheck_state: button::State
+    edit_state: button::State
 }
 impl EmployeeListEntry {
     fn view(&mut self) -> Row<Message> {
-        Row::new()
+        Row::new().push(Text::new(format!("{} {} ({})", self.first_name, self.last_name, self.e_id)))
+            .push(Button::new(&mut self.edit_state, Text::new("Edit"))
+                .on_press(Message::EmployeeListMessage(EmployeeListMessage::Edit(self.e_id))))
     }
 }
 
@@ -48,12 +46,27 @@ impl EmployeeListState {
 
     pub(crate) fn update(&mut self, msg: EmployeeListMessage, client: &mut Client, user: &User) -> Option<Message> {
         match msg {
-            EmployeeListMessage::Back => {}
-            EmployeeListMessage::Edit(_) => {}
-            EmployeeListMessage::W2(_) => {}
-            EmployeeListMessage::Paycheck(_) => {}
-            EmployeeListMessage::Load => {}
-            EmployeeListMessage::AddEmployee => {}
+            EmployeeListMessage::Load => {
+                let emp_list = client.query("SELECT * FROM employee", &[]);
+                for emp in emp_list.expect("Cannot Get employees!") {
+                    self.entries.insert(emp.get("e_id"), EmployeeListEntry {
+                        first_name: emp.get("firstName"),
+                        last_name: emp.get("lastName"),
+                        e_id: emp.get("E_ID"),
+                        edit_state: Default::default()
+                    });
+                }
+                return Some(Message::SelectPage(Page::EmployeeList))
+            }
+            EmployeeListMessage::Back => {
+                return Some(Message::SelectPage(Page::Main))
+            }
+            EmployeeListMessage::Edit(idx) => {
+                return Some(Message::EmployeeMessage(crate::employee::EmployeeMessage::LoadEmployee(idx)))
+            }
+            EmployeeListMessage::AddEmployee => {
+                return Some(Message::EmployeeMessage(crate::employee::EmployeeMessage::CreateEmployee))
+            }
         }
         None
     }
@@ -65,6 +78,10 @@ impl EmployeeListState {
                 Column::new(),
                 |parent: Column<Message>, (d_id, entry)| {
                     parent.push(entry.view())}))
+            .push(Button::new(&mut self.back_state, Text::new("Back"))
+                .on_press(Message::EmployeeListMessage(EmployeeListMessage::Back)))
+            .push(Button::new(&mut self.add_state, Text::new("Add Employee"))
+                .on_press(Message::EmployeeListMessage(EmployeeListMessage::AddEmployee)))
             .into()
     }
 }

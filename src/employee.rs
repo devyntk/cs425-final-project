@@ -17,6 +17,7 @@ pub enum EmployeeMessage {
     AddDep,
     RemoveDep(i32),
     LoadEmployee(i32),
+    CreateEmployee,
     LoadYear(i32),
     SaveChanges,
     ChangeDepID(i32, String),
