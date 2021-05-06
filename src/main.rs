@@ -7,8 +7,6 @@ mod menu;
 mod paycheck;
 mod w2;
 
-
-
 use iced::{Element, Sandbox, Settings};
 use log::info;
 use postgres::{Client, NoTls};

@@ -284,37 +284,47 @@ $$ language plpgsql;
 
 /*company employee expense report:wages, bonus paid, 401k employer contribution, ssn contribution, insurance contribution*/
 create function find_wages(yr int)
-    returns SETOF integer AS $BODY$
+    returns REAL AS $BODY$
+    declare total REAL;
     begin
-        return query select E_ID, salary from employeeYear where e_year=yr;
+        SELECT COALESCE(SUM(salary),0) into total from employeeYear where e_year=yr;
+        return total;
     end
 $BODY$ language plpgsql;
 
 create function bonus_paid(yr int)
-    returns SETOF integer AS $BODY$
+    returns REAL AS $BODY$
+    declare total REAL;
     begin
-        return query select E_ID, salary, performance from employeeYear where e_year=yr;
+        select COALESCE(SUM(company_sale),0) into total from bonus where e_year=yr;
+        return total;
     end
 $BODY$ language plpgsql;
 
 create function retirement_employer(yr int)
-returns SETOF integer AS $BODY$
+returns REAL AS $BODY$
+    declare total REAL;
     begin
-        return query select E_ID, employerContribution as amount from benefits where e_year=yr and benefitType='401k';
+        select COALESCE(SUM(employerContribution),0) into total from benefits where e_year=yr and benefitType='401k';
+        return total;
     end
 $BODY$ language plpgsql;
 
 create function ssn_employer(yr int)
-    returns SETOF integer AS $BODY$
+    returns REAL AS $BODY$
+    declare total REAL;
     begin
-        return query select E_ID, employerPays as amount from socialSecurity where e_year=yr;
+        select COALESCE(SUM(employerPays),0) into total from socialSecurity where e_year=yr;
+        return total;
     end
 $BODY$ language plpgsql;
 
 create function insurance_employer(yr int)
-    returns SETOF integer AS $BODY$
+    returns REAL AS $BODY$
+    declare total REAL;
     begin
-        return query select E_ID, employerContribution as amount from insurancePlan where e_year=yr;
+        select COALESCE(SUM(employerContribution),0) into total from insurancePlan where e_year=yr;
+        return total;
     end
 $BODY$ language plpgsql;
 

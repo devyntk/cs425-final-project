@@ -1,10 +1,9 @@
 use crate::{Message, User, UserType};
 use iced::button;
 use iced::{pick_list, text_input, Button, Column, Element, Row, Text, TextInput};
-use log::{info};
+use log::info;
 use postgres::Client;
 use postgres_types::{FromSql, ToSql};
-
 
 #[derive(Debug, Clone)]
 pub enum EmployeeYearMessage {
@@ -284,17 +283,19 @@ impl EmployeeYearState {
                 return Some(Message::SelectPage(crate::Page::ViewEmployeeYear));
             }
             EmployeeYearMessage::Save => {
-                client.execute(
-                    "UPDATE employeeYear SET salary=$3, salaryType=$4, performance=$5\
+                client
+                    .execute(
+                        "UPDATE employeeYear SET salary=$3, salaryType=$4, performance=$5\
                 WHERE E_ID = $1 AND e_year=$2;",
-                    &[
-                        &self.e_id,
-                        &self.e_year,
-                        &self.salary,
-                        &self.salary_type,
-                        &self.performance,
-                    ],
-                ).expect("Cannot update EmployeeYear");
+                        &[
+                            &self.e_id,
+                            &self.e_year,
+                            &self.salary,
+                            &self.salary_type,
+                            &self.performance,
+                        ],
+                    )
+                    .expect("Cannot update EmployeeYear");
                 if let Some(ss) = &self.social_security {
                     client.execute("INSERT INTO socialSecurity (E_ID, e_year, amount, employeePays, employerPays)\
                     VALUES ($1, $2, $3, $4, $5) \
