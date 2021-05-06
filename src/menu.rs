@@ -39,7 +39,6 @@ impl MenuState {
                 self.expense_year = str.parse().unwrap_or(self.expense_year);
                 None
             }
-            _ => None,
         }
     }
 

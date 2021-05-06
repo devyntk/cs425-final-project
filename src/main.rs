@@ -9,7 +9,7 @@ mod w2;
 
 
 
-use iced::{Column, Element, Sandbox, Settings, Text};
+use iced::{Element, Sandbox, Settings};
 use log::info;
 use postgres::{Client, NoTls};
 use postgres_types::{FromSql, ToSql};
@@ -207,9 +207,6 @@ impl Sandbox for EmployeeDB {
             Message::SelectPage(page) => {
                 self.page = page;
             }
-            _ => {
-                panic!("Unexpected Message")
-            }
         }
     }
 
@@ -225,11 +222,6 @@ impl Sandbox for EmployeeDB {
                 .view(self.user.as_ref().unwrap()),
             Page::W2 => self.w2_state.view(self.user.as_ref().unwrap()),
             Page::Paycheck => self.paycheck_state.view(self.user.as_ref().unwrap()),
-            _ => Column::new()
-                .push(Text::new(
-                    "This should be unreachable. If you are here, something is wrong.",
-                ))
-                .into(),
         }
     }
 }

@@ -1,6 +1,6 @@
-use crate::{Message, Page, User, UserType};
+use crate::{Message, Page, User};
 use iced::button;
-use iced::{text_input, Button, Column, Element, Row, Text, TextInput};
+use iced::{Button, Column, Element, Row, Text};
 
 use postgres::Client;
 
@@ -8,9 +8,6 @@ use postgres::Client;
 pub enum PaycheckMessage {
     Load { year: i32, e_id: i32 },
     Back,
-}
-fn make_wrapper(variant: impl Fn(String) -> PaycheckMessage) -> impl Fn(String) -> Message {
-    move |s| Message::PaycheckMessage(variant(s))
 }
 
 #[derive(Debug, Clone, Default)]
@@ -72,10 +69,9 @@ impl PaycheckState {
             }
             PaycheckMessage::Back => return Some(Message::SelectPage(Page::ViewEmployeeYear)),
         }
-        None
     }
 
-    pub(crate) fn view(&mut self, user: &User) -> Element<Message> {
+    pub(crate) fn view(&mut self, _user: &User) -> Element<Message> {
         Column::new()
             .push(
                 Row::new()

@@ -1,6 +1,6 @@
 use crate::{Message, Page, User};
 use iced::button;
-use iced::{text_input, Button, Column, Element, Row, Text, TextInput};
+use iced::{Button, Column, Element, Row, Text};
 
 use postgres::Client;
 use std::collections::HashMap;
@@ -11,9 +11,6 @@ pub enum EmployeeListMessage {
     Edit(i32),
     Load,
     AddEmployee,
-}
-fn make_wrapper(variant: impl Fn(String) -> EmployeeListMessage) -> impl Fn(String) -> Message {
-    move |s| Message::EmployeeListMessage(variant(s))
 }
 
 #[derive(Debug, Clone, Default)]
@@ -84,7 +81,6 @@ impl EmployeeListState {
                 ))
             }
         }
-        None
     }
 
     pub(crate) fn view(&mut self, _user: &User) -> Element<Message> {

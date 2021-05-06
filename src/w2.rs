@@ -1,6 +1,6 @@
 use crate::{Message, Page, User};
 use iced::button;
-use iced::{text_input, Button, Column, Element, Row, Text, TextInput};
+use iced::{Button, Column, Element, Row, Text};
 
 use postgres::Client;
 
@@ -8,9 +8,6 @@ use postgres::Client;
 pub enum W2Message {
     W2Report { year: i32, e_id: i32 },
     Back,
-}
-fn make_wrapper(variant: impl Fn(String) -> W2Message) -> impl Fn(String) -> Message {
-    move |s| Message::W2Message(variant(s))
 }
 
 #[derive(Debug, Clone, Default)]
@@ -62,7 +59,6 @@ impl W2State {
             }
             W2Message::Back => return Some(Message::SelectPage(Page::ViewEmployeeYear)),
         }
-        None
     }
 
     pub(crate) fn view(&mut self, _user: &User) -> Element<Message> {

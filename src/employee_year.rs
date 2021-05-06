@@ -294,7 +294,7 @@ impl EmployeeYearState {
                         &self.salary_type,
                         &self.performance,
                     ],
-                );
+                ).expect("Cannot update EmployeeYear");
                 if let Some(ss) = &self.social_security {
                     client.execute("INSERT INTO socialSecurity (E_ID, e_year, amount, employeePays, employerPays)\
                     VALUES ($1, $2, $3, $4, $5) \
@@ -703,7 +703,7 @@ impl EmployeeYearState {
                                     &mut self.benefit_employee_contribution_state,
                                     "Employee Pays:",
                                     &*benefits.employee_contribution.to_string(),
-                                    make_wrapper(EmployeeYearMessage::UpdateSSEmployeePays),
+                                    make_wrapper(EmployeeYearMessage::UpdateBenefitEmployee),
                                 ),
                             )),
                         _ => Column::new().push(Text::new("None on record.")).push(
